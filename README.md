@@ -5,7 +5,7 @@ A collection of skills for AI agents. Skills are packaged instructions and scrip
 ## Installation
 
 ```bash
-npx skills add den-labs/skills
+npx skills add den-labs/agent-skills
 ```
 
 ## Available Skills
