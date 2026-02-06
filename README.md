@@ -40,4 +40,5 @@ Claude Code, Cursor, Windsurf, Cline, GitHub Copilot, Gemini CLI, and more.
 
 ## License
 
-MIT
+This project is licensed under the Wolfcito Open / Commercial License (WOCL).
+Commercial use requires a separate agreement.
