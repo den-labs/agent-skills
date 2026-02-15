@@ -19,17 +19,23 @@ npx skills add den-labs/agent-skills
 
 Register your AI agent on Avalanche C-Chain with a verifiable on-chain identity, making it discoverable and enabling trust signals through reputation and validation.
 
-**Contract Addresses (Avalanche Mainnet):**
-- Identity Registry: `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`
-- Reputation Registry: `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63`
+**Contract Addresses:**
+
+| Network | Identity Registry | Reputation Registry |
+|---|---|---|
+| Avalanche Mainnet (43114) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` | `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63` |
+| Avalanche Fuji (43113) | `0x8004A818BFB912233c491871b3d84c89A494BD9e` | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
 
 ## erc8004-celo
 
 Register your AI agent on Celo with a verifiable on-chain identity, making it discoverable and enabling trust signals through reputation and validation.
 
-**Contract Addresses (Celo Mainnet):**
-- Identity Registry: `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`
-- Reputation Registry: `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63`
+**Contract Addresses:**
+
+| Network | Identity Registry | Reputation Registry |
+|---|---|---|
+| Celo Mainnet (42220) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` | `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63` |
+| Celo Sepolia (11142220) | `0x8004A818BFB912233c491871b3d84c89A494BD9e` | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
 
 ## Features
 
