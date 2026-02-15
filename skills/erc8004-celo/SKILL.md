@@ -1,6 +1,6 @@
 ---
 name: erc8004-celo
-description: Register and manage AI agent identities on Celo using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, request validation, or interact with ERC-8004 identity/reputation/validation registries on Celo mainnet or Alfajores testnet.
+description: Register and manage AI agent identities on Celo using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, request validation, or interact with ERC-8004 identity/reputation/validation registries on Celo mainnet or Celo Sepolia testnet.
 ---
 
 # ERC-8004: Trustless Agents on Celo
@@ -22,11 +22,11 @@ Website: https://www.8004.org | Spec: https://eips.ethereum.org/EIPS/eip-8004
 | Chain | Identity Registry | Reputation Registry |
 |---|---|---|
 | Celo Mainnet (42220) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` | `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63` |
-| Celo Alfajores (44787) | `0x8004A818BFB912233c491871b3d84c89A494BD9e` | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
+| Celo Sepolia (11142220) | `0x8004A818BFB912233c491871b3d84c89A494BD9e` | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
 
 Explorer links:
 - Mainnet: https://celoscan.io/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
-- Alfajores: https://alfajores.celoscan.io/address/0x8004A818BFB912233c491871b3d84c89A494BD9e
+- Celo Sepolia: https://celo-sepolia.blockscout.com/address/0x8004A818BFB912233c491871b3d84c89A494BD9e
 
 ## Quick Start
 
@@ -119,13 +119,13 @@ Your agent's registration file (see `assets/templates/registration.json`):
 
 ## Celo Network Details
 
-| Parameter | Mainnet | Alfajores Testnet |
+| Parameter | Mainnet | Celo Sepolia Testnet |
 |---|---|---|
-| Chain ID | 42220 | 44787 |
-| RPC URL | `https://forno.celo.org` | `https://alfajores-forno.celo-testnet.org` |
-| Explorer | https://celoscan.io | https://alfajores.celoscan.io |
+| Chain ID | 42220 | 11142220 |
+| RPC URL | `https://forno.celo.org` | `https://forno.celo-sepolia.celo-testnet.org` |
+| Explorer | https://celoscan.io | https://celo-sepolia.blockscout.com |
 | Currency | CELO | CELO (test) |
-| Faucet | - | https://faucet.celo.org |
+| Faucet | - | https://faucet.celo.org/celo-sepolia |
 
 ## Workflow
 

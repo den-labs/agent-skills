@@ -5,15 +5,15 @@ set -euo pipefail
 # Usage:
 #   ./scripts/register.sh <agent-uri>
 #   ./scripts/register.sh ipfs              # Upload to IPFS first, then register
-#   NETWORK=alfajores ./scripts/register.sh <agent-uri>  # Register on Alfajores testnet
+#   NETWORK=sepolia ./scripts/register.sh <agent-uri>  # Register on Celo Sepolia testnet
 
 NETWORK="${NETWORK:-mainnet}"
 
-if [ "$NETWORK" = "alfajores" ]; then
-  RPC_URL="${CELO_RPC_URL:-https://alfajores-forno.celo-testnet.org}"
+if [ "$NETWORK" = "sepolia" ]; then
+  RPC_URL="${CELO_RPC_URL:-https://forno.celo-sepolia.celo-testnet.org}"
   IDENTITY_REGISTRY="0x8004A818BFB912233c491871b3d84c89A494BD9e"
-  CHAIN_ID="44787"
-  EXPLORER="https://alfajores.celoscan.io"
+  CHAIN_ID="11142220"
+  EXPLORER="https://celo-sepolia.blockscout.com"
 else
   RPC_URL="${CELO_RPC_URL:-https://forno.celo.org}"
   IDENTITY_REGISTRY="0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
@@ -35,7 +35,7 @@ if [ -z "$AGENT_URI" ]; then
   echo "  ./scripts/register.sh https://myagent.xyz/agent.json"
   echo "  ./scripts/register.sh ipfs://QmXYZ..."
   echo "  PINATA_JWT=xxx ./scripts/register.sh ipfs"
-  echo "  NETWORK=alfajores ./scripts/register.sh https://myagent.xyz/agent.json"
+  echo "  NETWORK=sepolia ./scripts/register.sh https://myagent.xyz/agent.json"
   exit 1
 fi
 

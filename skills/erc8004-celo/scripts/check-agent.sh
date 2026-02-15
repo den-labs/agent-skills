@@ -4,16 +4,16 @@ set -euo pipefail
 # ERC-8004 Agent Checker on Celo
 # Usage:
 #   ./scripts/check-agent.sh <agent-id>
-#   NETWORK=alfajores ./scripts/check-agent.sh <agent-id>
+#   NETWORK=sepolia ./scripts/check-agent.sh <agent-id>
 
 NETWORK="${NETWORK:-mainnet}"
 
-if [ "$NETWORK" = "alfajores" ]; then
-  RPC_URL="${CELO_RPC_URL:-https://alfajores-forno.celo-testnet.org}"
+if [ "$NETWORK" = "sepolia" ]; then
+  RPC_URL="${CELO_RPC_URL:-https://forno.celo-sepolia.celo-testnet.org}"
   IDENTITY_REGISTRY="0x8004A818BFB912233c491871b3d84c89A494BD9e"
   REPUTATION_REGISTRY="0x8004B663056A597Dffe9eCcC1965A193B7388713"
-  CHAIN_ID="44787"
-  EXPLORER="https://alfajores.celoscan.io"
+  CHAIN_ID="11142220"
+  EXPLORER="https://celo-sepolia.blockscout.com"
 else
   RPC_URL="${CELO_RPC_URL:-https://forno.celo.org}"
   IDENTITY_REGISTRY="0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
@@ -26,7 +26,7 @@ AGENT_ID="${1:-}"
 
 if [ -z "$AGENT_ID" ]; then
   echo "Usage: ./scripts/check-agent.sh <agent-id>"
-  echo "  NETWORK=alfajores ./scripts/check-agent.sh 1"
+  echo "  NETWORK=sepolia ./scripts/check-agent.sh 1"
   exit 1
 fi
 

@@ -5,12 +5,29 @@
 ### Setup
 
 ```typescript
-import { createPublicClient, createWalletClient, http, parseAbi } from 'viem';
-import { celo, celoAlfajores } from 'viem/chains';
+import { createPublicClient, createWalletClient, defineChain, http, parseAbi } from 'viem';
+import { celo } from 'viem/chains';
+import { chainConfig } from 'viem/celo';
 import { privateKeyToAccount } from 'viem/accounts';
 
+// Celo Sepolia testnet (not yet exported by viem)
+const celoSepolia = defineChain({
+  ...chainConfig,
+  id: 11142220,
+  name: 'Celo Sepolia',
+  network: 'celo-sepolia',
+  nativeCurrency: { name: 'CELO', symbol: 'CELO', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://forno.celo-sepolia.celo-testnet.org'] },
+  },
+  blockExplorers: {
+    default: { name: 'Blockscout', url: 'https://celo-sepolia.blockscout.com' },
+  },
+  testnet: true,
+});
+
 // Choose network
-const chain = celo; // or celoAlfajores for testnet
+const chain = celo; // or celoSepolia for testnet
 
 const IDENTITY_REGISTRY = chain.id === 42220
   ? '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432'

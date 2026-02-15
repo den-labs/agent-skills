@@ -7,26 +7,26 @@
 | Identity Registry | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` | [Celoscan](https://celoscan.io/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432) |
 | Reputation Registry | `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63` | [Celoscan](https://celoscan.io/address/0x8004BAa17C55a88189AE136b182e5fdA19dE9b63) |
 
-## Celo Alfajores Testnet (Chain ID: 44787)
+## Celo Sepolia Testnet (Chain ID: 11142220)
 
 | Contract | Address | Explorer |
 |---|---|---|
-| Identity Registry | `0x8004A818BFB912233c491871b3d84c89A494BD9e` | [Celoscan](https://alfajores.celoscan.io/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) |
-| Reputation Registry | `0x8004B663056A597Dffe9eCcC1965A193B7388713` | [Celoscan](https://alfajores.celoscan.io/address/0x8004B663056A597Dffe9eCcC1965A193B7388713) |
+| Identity Registry | `0x8004A818BFB912233c491871b3d84c89A494BD9e` | [Blockscout](https://celo-sepolia.blockscout.com/address/0x8004A818BFB912233c491871b3d84c89A494BD9e) |
+| Reputation Registry | `0x8004B663056A597Dffe9eCcC1965A193B7388713` | [Blockscout](https://celo-sepolia.blockscout.com/address/0x8004B663056A597Dffe9eCcC1965A193B7388713) |
 
 ## RPC Endpoints
 
 | Network | RPC URL | Chain ID |
 |---|---|---|
 | Mainnet | `https://forno.celo.org` | 42220 |
-| Alfajores Testnet | `https://alfajores-forno.celo-testnet.org` | 44787 |
+| Celo Sepolia Testnet | `https://forno.celo-sepolia.celo-testnet.org` | 11142220 |
 
 ## Agent Registry Identifiers
 
 Used in registration files to globally identify agents:
 
 - **Mainnet**: `eip155:42220:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`
-- **Alfajores**: `eip155:44787:0x8004A818BFB912233c491871b3d84c89A494BD9e`
+- **Celo Sepolia**: `eip155:11142220:0x8004A818BFB912233c491871b3d84c89A494BD9e`
 
 ## Also Deployed On
 

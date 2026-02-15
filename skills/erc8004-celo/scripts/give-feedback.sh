@@ -4,15 +4,15 @@ set -euo pipefail
 # ERC-8004 Give Feedback on Celo
 # Usage:
 #   ./scripts/give-feedback.sh <agent-id> <value> [tag1] [tag2]
-#   NETWORK=alfajores ./scripts/give-feedback.sh 1 85 "starred" "quality"
+#   NETWORK=sepolia ./scripts/give-feedback.sh 1 85 "starred" "quality"
 
 NETWORK="${NETWORK:-mainnet}"
 
-if [ "$NETWORK" = "alfajores" ]; then
-  RPC_URL="${CELO_RPC_URL:-https://alfajores-forno.celo-testnet.org}"
+if [ "$NETWORK" = "sepolia" ]; then
+  RPC_URL="${CELO_RPC_URL:-https://forno.celo-sepolia.celo-testnet.org}"
   REPUTATION_REGISTRY="0x8004B663056A597Dffe9eCcC1965A193B7388713"
-  CHAIN_ID="44787"
-  EXPLORER="https://alfajores.celoscan.io"
+  CHAIN_ID="11142220"
+  EXPLORER="https://celo-sepolia.blockscout.com"
 else
   RPC_URL="${CELO_RPC_URL:-https://forno.celo.org}"
   REPUTATION_REGISTRY="0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
@@ -37,7 +37,7 @@ if [ -z "$AGENT_ID" ] || [ -z "$VALUE" ]; then
   echo "Examples:"
   echo "  ./scripts/give-feedback.sh 1 85 starred"
   echo "  ./scripts/give-feedback.sh 1 9950 uptime   (with VALUE_DECIMALS=2 for 99.50%)"
-  echo "  NETWORK=alfajores ./scripts/give-feedback.sh 1 1 reachable"
+  echo "  NETWORK=sepolia ./scripts/give-feedback.sh 1 1 reachable"
   echo ""
   echo "Common tags:"
   echo "  starred        - Quality rating (0-100)"
