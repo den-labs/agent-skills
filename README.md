@@ -1,6 +1,7 @@
 # DEN Labs Agent Skills
 
-A collection of skills for AI agents. Skills are packaged instructions and scripts that extend agent capabilities.
+> **DenLabs Lab** · SDK
+> Installable AI agent skills for on-chain identity and reputation via ERC-8004.
 
 ## Installation
 
