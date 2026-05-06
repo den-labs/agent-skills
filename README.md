@@ -15,6 +15,7 @@ npx skills add den-labs/agent-skills
 |---|---|---|
 | **erc8004-avalanche** | Blockchain | Register and manage AI agent identities on Avalanche using ERC-8004 (Trustless Agents) |
 | **erc8004-celo** | Blockchain | Register and manage AI agent identities on Celo using ERC-8004 (Trustless Agents) |
+| **alchemy-contribute** | DevTools / OSS | Automate the end-to-end contribution flow to any Alchemy open-source repo — fork, clone, upstream, branch, lint, commit, push, PR — with confirmation gates only on irreversible steps |
 
 ## erc8004-avalanche
 
@@ -37,6 +38,23 @@ Register your AI agent on Celo with a verifiable on-chain identity, making it di
 |---|---|---|
 | Celo Mainnet (42220) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` | `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63` |
 | Celo Sepolia (11142220) | `0x8004A818BFB912233c491871b3d84c89A494BD9e` | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
+
+## alchemy-contribute
+
+Ship a Pull Request to any Alchemy open-source repository (`alchemyplatform/*`) in a single conversation. The skill automates the 11 steps of the official Alchemy Contribution Checklist and asks for confirmation only at irreversible boundaries (fork, push, PR open).
+
+**What it covers:**
+
+- Reads `CONTRIBUTING.md` first and honors repo-specific overrides
+- Detects the package manager (pnpm / bun / yarn / npm / cargo / forge / go) from lockfiles
+- Surfaces docs-repo specifics: `content/docs.yml` nav manifest, generated `content/api-specs/`, Cloudinary-hosted images, `pnpm run validate` and broken-link checks
+- Resolves the upstream default branch dynamically (`main` vs `master` vs `develop`)
+- Resumes mid-flow when the user has already done part of the setup
+- Generates Conventional Commits messages and PR bodies that match each repo's template
+
+**Triggers:** "contribuir a alchemy", "abrir PR a aa-sdk", "fork alchemyplatform", "PR en alchemy-sdk-js", "contribuir docs alchemy".
+
+**Built for:** Claude Code, Codex, Cursor, Windsurf, and any other agent that consumes installable skills.
 
 ## Features
 
