@@ -1,0 +1,23 @@
+# Skill installation artifacts (produced by `npx skills add`, not source)
+.agents/
+skills-lock.json
+
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment / secrets — never commit
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+*.swp
