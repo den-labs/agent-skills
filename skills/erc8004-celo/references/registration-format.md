@@ -125,3 +125,36 @@ Optional JSON file for detailed feedback:
   }
 }
 ```
+
+
+## Field reference
+
+| Field | Type | Notes |
+|---|---|---|
+| `type` | string | Always `https://eips.ethereum.org/EIPS/eip-8004#registration-v1` |
+| `name` | string | Display name. Required |
+| `description` | string | What the agent does |
+| `image` | string | Avatar URL |
+| `services` | array | Endpoints callers can use. `name` is conventionally `web`, `A2A` or `MCP` |
+| `x402Support` | boolean | `true` if the agent accepts x402 stablecoin micropayments. Set it when the agent charges for anything — it is how callers discover that |
+| `active` | boolean | `false` retires the agent without burning the NFT |
+| `registrations` | array | `agentRegistry` is CAIP-10: `eip155:42220:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` |
+| `supportedTrust` | array | Trust models the agent honours |
+
+### `supportedTrust` values
+
+| Value | Meaning |
+|---|---|
+| `reputation` | ERC-8004 Reputation Registry feedback. The only one usable today |
+| `crypto-economic` | Stake-secured re-execution |
+| `tee-attestation` | Trusted execution environment attestation |
+
+The last two depend on the Validation Registry, which is **not deployed on any
+chain**. Listing them is a statement of intent, not a working capability.
+
+### Environment variables that build this file
+
+`register.sh ipfs` constructs the document from `AGENT_NAME`,
+`AGENT_DESCRIPTION`, `AGENT_IMAGE`, `AGENT_SERVICES` (a JSON array),
+`AGENT_X402_SUPPORT` (`true`/`false`) and `AGENT_SUPPORTED_TRUST`
+(comma-separated).

@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and each skill carries its own semver `version` in its `SKILL.md` frontmatter.
 
+## [1.3.0] - 2026-09-03
+
+### Added
+
+- `license` and `compatibility` frontmatter on all four skills. Both are spec fields that existed all along; the environment requirements had been written as prose in the body instead.
+- `trust-score`: `get-signals.sh` (risk signals) and `get-events.sh` (on-chain history), completing the five endpoints the skill documents.
+- `scripts/check-links.sh` plus a CI job. Ecosystem programme links are the fastest-rotting content in the skills.
+- `references/registration-format.md` now documents every field, the `supportedTrust` values, and the environment variables `register.sh ipfs` reads.
+
+### Fixed
+
+- **A dead link shipped in 1.0.0**: `celopg.eco/insights/build-your-agent-on-celo` returns 404. Replaced with `docs.celo.org/build-on-celo/build-with-ai/overview`, verified 200.
+- Celo fee-abstraction links pointed at `/developer/fee-abstraction`, which redirects; they now use the canonical `/build-on-celo/fee-abstraction/overview`.
+- `CONTRIBUTING.md` still told contributors to put `version` at the top level of frontmatter — the exact mistake that broke every skill in 1.0.0. It now documents `metadata.version` and points at `skills-ref` as the authority.
+
+### Known limitation
+
+`get-signals.sh` and `get-events.sh` could not be verified against a live API: every `/api/v1/*` path on both oracles returns 401 and no key was available. They follow the documented schema and print the raw body rather than failing silently if a field name differs.
+
 ## [1.2.0] - 2026-09-03
 
 ### Added

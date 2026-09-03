@@ -61,6 +61,16 @@ jobs:
       - name: Read agents from live chains without Foundry
         run: ./tests/test-reads.sh
 
+  links:
+    name: External links
+    runs-on: ubuntu-latest
+    # Third-party sites go down independently of this repo.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check external links resolve
+        run: ./scripts/check-links.sh
+
   addresses:
     name: Verify registry addresses on-chain
     runs-on: ubuntu-latest

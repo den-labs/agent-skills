@@ -1,5 +1,7 @@
 ---
 name: erc8004-celo
+license: Wolfcito Open / Commercial License (WOCL). See LICENSE.
+compatibility: Requires bash, curl and jq. Writing to the chain also requires Foundry (cast) and a funded Celo account.
 metadata:
   version: "1.2.0"
 description: Register and manage AI agent identities on Celo using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, or interact with the ERC-8004 identity and reputation registries on Celo mainnet or Celo Sepolia testnet. Also covers what makes Celo distinct for autonomous agents — paying gas in stablecoins via CIP-64 fee abstraction, x402 agent payments, Self proof-of-humanity, and the Celo Agent Visa and Divvi builder programs.
@@ -151,7 +153,7 @@ await client.sendTransaction({
 
 Supported fee currencies are governed on-chain and include cUSD, cEUR and USDT. Ledger supports CIP-64 signing. Note that `cast` does not expose `feeCurrency`, so the bundled scripts pay gas in CELO — use viem for a stablecoin-funded agent.
 
-Reference: https://docs.celo.org/developer/fee-abstraction
+Reference: https://docs.celo.org/build-on-celo/fee-abstraction/overview
 
 ### x402 — getting the agent paid
 
@@ -176,7 +178,7 @@ MiniPay has processed 420M+ stablecoin transactions and supports 25 stablecoins,
 - **Celo Agent Visa** — a program aimed specifically at agent builders, with DeFi incentives.
 - **Divvi Proof of Impact** — real-time rewards based on actual usage once your app is live on Celo mainnet.
 
-Start at https://www.celopg.eco/insights/build-your-agent-on-celo
+Start at https://docs.celo.org/build-on-celo/build-with-ai/overview
 
 ### Celo is an L2
 
@@ -295,6 +297,6 @@ See `references/api-reference.md` for complete TypeScript examples.
 - [ERC-8004 Spec](https://eips.ethereum.org/EIPS/eip-8004)
 - [erc-8004-contracts](https://github.com/erc-8004/erc-8004-contracts)
 - [8004.org](https://www.8004.org) · [8004scan explorer](https://8004scan.io)
-- [Build your Agent on Celo](https://www.celopg.eco/insights/build-your-agent-on-celo)
-- [Celo fee abstraction](https://docs.celo.org/developer/fee-abstraction) · [x402 on Celo](https://docs.celo.org/build-on-celo/build-with-ai/x402)
+- [Build your Agent on Celo](https://docs.celo.org/build-on-celo/build-with-ai/overview)
+- [Celo fee abstraction](https://docs.celo.org/build-on-celo/fee-abstraction/overview) · [x402 on Celo](https://docs.celo.org/build-on-celo/build-with-ai/x402)
 - [Celoscan](https://celoscan.io)

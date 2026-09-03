@@ -1,7 +1,9 @@
 ---
 name: trust-score
+license: Wolfcito Open / Commercial License (WOCL). See LICENSE.
+compatibility: Requires bash, curl and jq, plus a DenScope or Ayni API key for every endpoint.
 metadata:
-  version: "1.0.1"
+  version: "1.1.0"
 description: Query ERC-8004 agent trust scores from DenScope (Celo) and Ayni (Avalanche). Use this skill when you need to check if an AI agent is trustworthy, get reputation data, view risk signals, or search for registered agents on-chain.
 ---
 
@@ -46,6 +48,19 @@ export TRUST_API_KEY="ds_your_key_here"
 ```bash
 ./scripts/get-agent.sh denscope celo 1
 ```
+
+### Risk Signals and Event History
+
+```bash
+./scripts/get-signals.sh denscope celo 1     # reputation drops, sybil, spikes
+./scripts/get-events.sh denscope celo 1 20   # on-chain event history
+```
+
+> The response shape for these two endpoints could not be verified against a
+> live API — every `/api/v1/*` path returns 401 without a key, and none was
+> available when they were written. They follow the documented schema and the
+> same request path as the verified scripts; if a field name differs, the
+> script prints the raw body rather than failing silently.
 
 ### Search Agents
 

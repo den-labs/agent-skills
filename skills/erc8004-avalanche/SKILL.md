@@ -1,5 +1,7 @@
 ---
 name: erc8004-avalanche
+license: Wolfcito Open / Commercial License (WOCL). See LICENSE.
+compatibility: Requires bash, curl and jq. Writing to the chain also requires Foundry (cast) and a funded Avalanche account.
 metadata:
   version: "1.2.0"
 description: Register and manage AI agent identities on Avalanche using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, or interact with the ERC-8004 identity and reputation registries on Avalanche C-Chain or Fuji testnet. Also covers what makes Avalanche distinct for autonomous agents — running an agent on its own Avalanche L1, cross-chain calls via Interchain Messaging and Teleporter, AvaCloud, and the Retro9000 grant program.

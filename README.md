@@ -33,8 +33,11 @@ The Celo and Avalanche skills are kept separate on purpose. The ERC-8004 core is
 ## Development
 
 ```bash
-./scripts/validate-skills.sh          # structure, frontmatter, links, lint, secrets
-./tests/test-safety.sh                # on-chain script safety guarantees (cast is stubbed)
+./scripts/validate-skills.sh          # wraps skills-ref, plus links, lint, secrets
+./tests/test-safety.sh                # on-chain write guarantees (cast is stubbed)
+./tests/test-reads.sh                 # live read path against all four networks
+./scripts/verify-addresses.sh         # registry addresses have code on chain
+./scripts/check-links.sh              # external links still resolve
 ./scripts/sync-shared.sh              # re-vendor the shared ERC-8004 library
 ./scripts/sync-shared.sh --check      # fail if any vendored copy has drifted
 ```
