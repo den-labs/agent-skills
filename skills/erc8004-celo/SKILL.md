@@ -1,7 +1,7 @@
 ---
 name: erc8004-celo
 metadata:
-  version: "1.0.1"
+  version: "1.1.0"
 description: Register and manage AI agent identities on Celo using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, or interact with the ERC-8004 identity and reputation registries on Celo mainnet or Celo Sepolia testnet. Also covers what makes Celo distinct for autonomous agents — paying gas in stablecoins via CIP-64 fee abstraction, x402 agent payments, Self proof-of-humanity, and the Celo Agent Visa and Divvi builder programs.
 ---
 
@@ -76,6 +76,8 @@ AGENT_NAME="My Agent" AGENT_DESCRIPTION="Does a useful thing" \
 The script waits for a confirmation, fails loudly if the transaction reverts, and prints the new agent ID decoded from the ERC-721 `Transfer` event.
 
 ### 3. Check a registration
+
+No signer, no gas, no Foundry — just `curl` and `jq`.
 
 ```bash
 ./scripts/check-agent.sh <agent-id>              # Celo Sepolia
@@ -235,9 +237,17 @@ See `assets/templates/registration.json` and `references/registration-format.md`
 
 ## Prerequisites
 
-- **Foundry** (`cast`) — `curl -L https://foundry.paradigm.xyz | bash && foundryup`
-- **jq** — `brew install jq`
-- A funded account on the target network.
+**Reading** (`check-agent.sh`) needs only `curl` and `jq`. Anyone can verify an
+agent without installing a toolchain.
+
+**Writing** (`register.sh`, `give-feedback.sh`) additionally needs Foundry,
+which signs the transaction and manages keystores and hardware wallets:
+
+```bash
+curl -L https://foundry.paradigm.xyz | bash && foundryup
+```
+
+Plus a funded account on the target network.
 
 ## Using with viem / ethers.js
 

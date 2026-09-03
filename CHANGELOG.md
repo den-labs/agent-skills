@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and each skill carries its own semver `version` in its `SKILL.md` frontmatter.
 
+## [1.1.0] - 2026-09-03
+
+### Changed
+
+- **`check-agent.sh` no longer needs Foundry.** Reads are plain `eth_call`, so requiring a Rust toolchain just to ask who owns an agent was disproportionate. The read path now uses only `curl` and `jq`; `cast` remains required for signing, which bash cannot do. Verified against Celo mainnet, Celo Sepolia, Avalanche C-Chain and Fuji with `cast` replaced by a stub that fails if invoked.
+- A reverted `ownerOf` is now reported as "not registered" rather than as an RPC error — that revert is how ERC-721 expresses an unminted token, not a failure.
+- Long agent URIs are summarised instead of flooding the terminal. Some agents inline their whole registration document as a gzipped base64 `data:` URI; agent #1 on Celo is 1602 characters. `FULL_URI=1` prints it verbatim.
+
+### Added
+
+- `tests/test-reads.sh` — unit tests for the ABI encode/decode helpers plus live integration tests against all four networks. 28 checks, no gas, no signer.
+- CI job running the read path against live chains (informational, since it depends on public RPCs).
+- ABI helpers in the shared library: `e8_rpc`, `e8_eth_call`, `e8_encode_uint256`, `e8_decode_address`, `e8_decode_string`.
+
 ## [1.0.1] - 2026-09-03
 
 ### Fixed

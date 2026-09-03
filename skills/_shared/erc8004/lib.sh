@@ -37,6 +37,100 @@ e8_require_jq() {
   e8_require_cmd jq "Install it: brew install jq  (or apt-get install jq)"
 }
 
+e8_require_curl() {
+  e8_require_cmd curl "Install it: brew install curl"
+}
+
+# --- Reading the chain (no Foundry) -----------------------------------------
+#
+# Reads are plain eth_call: a JSON-RPC POST with hex calldata. Requiring a Rust
+# toolchain just to ask who owns an agent is disproportionate, so the read path
+# needs only curl and jq. Signing still needs `cast` — bash cannot do secp256k1.
+
+# e8_rpc <rpc-url> <method> <params-json> — returns the `result` field.
+#
+# A reverted eth_call is a normal answer, not a failure: ERC-721 ownerOf reverts
+# for an unminted token, which is how "not registered" is expressed. Those
+# return status 2 with no message so the caller can interpret them. Transport
+# failures and other RPC errors still abort.
+e8_rpc() {
+  local rpc_url="$1" method="$2" params="$3"
+
+  local response
+  response="$(curl -sS -m 30 -X POST "$rpc_url" \
+    -H 'content-type: application/json' \
+    --data "$(jq -nc --arg m "$method" --argjson p "$params" \
+      '{jsonrpc:"2.0",id:1,method:$m,params:$p}')" 2>&1)" \
+    || e8_die "RPC request to $rpc_url failed:
+$response"
+
+  local err
+  err="$(printf '%s' "$response" | jq -r '.error.message // empty' 2>/dev/null)"
+  if [ -n "$err" ]; then
+    case "$err" in
+      *"execution reverted"*|*"revert"*) return 2 ;;
+      *) e8_die "RPC error from $rpc_url: $err" ;;
+    esac
+  fi
+
+  printf '%s' "$response" | jq -r '.result // empty'
+}
+
+# e8_encode_uint256 <n> — left-pads an integer to a 32-byte hex word.
+e8_encode_uint256() {
+  local n="$1"
+  printf '%s' "$n" | grep -qE '^[0-9]+$' || e8_die "Not an unsigned integer: '$n'"
+  # printf %x is limited to 64-bit. Real agent IDs are sequential and nowhere
+  # near that, so refuse loudly rather than silently encode the wrong value.
+  [ "${#n}" -le 19 ] && [ "$n" -le 9223372036854775807 ] 2>/dev/null \
+    || e8_die "Value '$n' exceeds the 64-bit range this encoder supports."
+  printf '%064x' "$n"
+}
+
+# e8_eth_call <rpc-url> <to> <calldata> — returns the raw hex result.
+e8_eth_call() {
+  local rpc_url="$1" to="$2" data="$3"
+  e8_rpc "$rpc_url" eth_call \
+    "$(jq -nc --arg to "$to" --arg data "$data" '[{to:$to,data:$data},"latest"]')"
+}
+
+# e8_decode_address <32-byte-word> — the low 20 bytes, 0x-prefixed.
+e8_decode_address() {
+  local word="${1#0x}"
+  [ "${#word}" -ge 64 ] || return 1
+  printf '0x%s' "$(printf '%s' "${word:24:40}" | tr 'A-Z' 'a-z')"
+}
+
+# e8_decode_string <abi-encoded-return> — decodes a single dynamic string.
+# Layout: [32b offset][32b length][data, right-padded to a 32-byte boundary].
+e8_decode_string() {
+  local hex="${1#0x}"
+  [ "${#hex}" -ge 128 ] || return 1
+
+  # Honour the offset rather than assuming the data starts at word 1.
+  local offset_hex offset
+  offset_hex="$(printf '%s' "${hex:0:64}" | sed 's/^0*//')"
+  if [ -z "$offset_hex" ]; then
+    offset=0
+  else
+    offset=$((16#$offset_hex))
+  fi
+
+  local length_hex length
+  length_hex="$(printf '%s' "${hex:$((offset * 2)):64}" | sed 's/^0*//')"
+  if [ -z "$length_hex" ]; then
+    printf ''
+    return 0
+  fi
+  length=$((16#$length_hex))
+
+  local data="${hex:$((offset * 2 + 64)):$((length * 2))}"
+  [ "${#data}" -eq $((length * 2)) ] || return 1
+
+  # Hex pairs to bytes, without spawning a subprocess per character.
+  printf '%b' "$(printf '%s' "$data" | sed 's/../\\x&/g')"
+}
+
 # --- Signing ----------------------------------------------------------------
 #
 # Resolves how cast should sign, in order of decreasing safety:

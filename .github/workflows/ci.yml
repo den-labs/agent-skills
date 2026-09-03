@@ -49,6 +49,18 @@ jobs:
       - name: Run safety tests
         run: ./tests/test-safety.sh
 
+  reads:
+    name: On-chain read path
+    runs-on: ubuntu-latest
+    # Hits public RPC endpoints, so a failure is informational.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Read agents from live chains without Foundry
+        run: ./tests/test-reads.sh
+
   addresses:
     name: Verify registry addresses on-chain
     runs-on: ubuntu-latest
