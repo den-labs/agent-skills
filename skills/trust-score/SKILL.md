@@ -16,10 +16,14 @@ This skill lets you check the trustworthiness of any ERC-8004 agent by querying 
 
 | Oracle | Chain | Chain ID | Base URL |
 |---|---|---|---|
-| DenScope | Celo Mainnet | 42220 | denscope.vercel.app |
-| DenScope | Celo Sepolia | 11142220 | denscope.vercel.app |
+| DenScope | Celo Mainnet | 42220 | www.denscope.xyz |
+| DenScope | Celo Sepolia | 11142220 | www.denscope.xyz |
 | Ayni | Avalanche C-Chain | 43114 | ayni-alpha.vercel.app |
 | Ayni | Fuji Testnet | 43113 | ayni-alpha.vercel.app |
+
+> **DenScope moved to `www.denscope.xyz`.** The old `denscope.vercel.app`
+> host still 301-redirects, but the scripts now call the canonical domain
+> directly and follow redirects.
 
 ## Quick Start
 
@@ -39,7 +43,6 @@ export TRUST_API_KEY="ds_your_key_here"
 ### Get Agent Profile
 
 ```bash
-# No API key needed for agent profiles
 ./scripts/get-agent.sh denscope celo 1
 ```
 
@@ -122,16 +125,22 @@ Then ask: "Check the trust score for agent 1 on Celo"
 
 | Method | Auth Required | Description |
 |---|---|---|
-| Get Agent | No | Agent profile, owner, metadata, feedback counts |
+| Get Agent | Yes | Agent profile, owner, metadata, feedback counts |
 | Get Score | Yes | Trust score 0-100 with breakdown |
 | Get Signals | Yes | Risk signals (reputation drops, sybil, spikes) |
-| Get Events | No | On-chain event history |
-| Search | No | Find agents by chain, owner, or query |
+| Get Events | Yes | On-chain event history |
+| Search | Yes | Find agents by chain, owner, or query |
+
+> **All endpoints require an API key.** Verified 2026-09-02: every `/api/v1/*`
+> path on both DenScope and Ayni returns HTTP 401 without an `Authorization`
+> header, including Get Agent and Search, which earlier versions of this skill
+> documented as public. The scripts now ask for the key up front rather than
+> failing mid-request.
 
 ## Links
 
 - [Trust SDK on npm](https://www.npmjs.com/package/@denlabs/trust-sdk)
 - [Ayni SDK on npm](https://www.npmjs.com/package/@denlabs/ayni-sdk)
 - [GitHub: den-labs/trust-sdk](https://github.com/den-labs/trust-sdk)
-- [DenScope Explorer](https://denscope.vercel.app)
+- [DenScope Explorer](https://www.denscope.xyz)
 - [ERC-8004 Spec](https://eips.ethereum.org/EIPS/eip-8004)

@@ -1,46 +1,43 @@
 #!/usr/bin/env bash
-# Search ERC-8004 agents (no API key required)
+# Search registered ERC-8004 agents.
 # Usage: ./search-agents.sh <oracle> <chain> [query] [limit]
-
+# Example: ./search-agents.sh denscope celo
+#
+# No API key required.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/trust.sh
+source "$SCRIPT_DIR/lib/trust.sh"
+
 ORACLE="${1:?Usage: search-agents.sh <oracle> <chain> [query] [limit]}"
-CHAIN="${2:?Missing chain}"
+CHAIN="${2:?Missing chain (celo, celo-sepolia, avalanche, fuji, or a chain ID)}"
 QUERY="${3:-}"
 LIMIT="${4:-10}"
 
-case "$ORACLE" in
-  denscope) BASE_URL="https://denscope.vercel.app" ;;
-  ayni)     BASE_URL="https://ayni-alpha.vercel.app" ;;
-  *)        echo "Unknown oracle: $ORACLE" >&2; exit 1 ;;
-esac
+printf '%s' "$LIMIT" | grep -qE '^[0-9]+$' || ts_die "Limit must be a positive integer, got '$LIMIT'."
 
-case "$CHAIN" in
-  celo)          CHAIN_ID=42220 ;;
-  celo-sepolia)  CHAIN_ID=11142220 ;;
-  avalanche)     CHAIN_ID=43114 ;;
-  fuji)          CHAIN_ID=43113 ;;
-  *)             CHAIN_ID="$CHAIN" ;;
-esac
+ts_require_jq
+ts_resolve_oracle "$ORACLE"
+ts_resolve_chain "$CHAIN"
 
-PARAMS="chainId=${CHAIN_ID}&limit=${LIMIT}"
-[ -n "$QUERY" ] && PARAMS="${PARAMS}&q=${QUERY}"
+URL="${TS_BASE_URL}/api/v1/search?chainId=${TS_CHAIN_ID}&limit=${LIMIT}"
+if [ -n "$QUERY" ]; then
+  # Percent-encode the query so terms with spaces or & do not corrupt the URL.
+  URL="${URL}&q=$(printf '%s' "$QUERY" | jq -sRr @uri)"
+fi
 
-URL="${BASE_URL}/api/v1/search?${PARAMS}"
+printf 'Searching agents on %s (chain %s)\n\n' "$ORACLE" "$TS_CHAIN_ID"
 
-echo "Searching agents on ${ORACLE} (chain ${CHAIN_ID}):"
-echo ""
+BODY="$(ts_get "$URL" yes)"
 
-API_KEY="${TRUST_API_KEY:-${DENSCOPE_API_KEY:-${AYNI_API_KEY:-}}}"
-CURL_ARGS=(-s)
-[ -n "$API_KEY" ] && CURL_ARGS+=(-H "Authorization: Bearer ${API_KEY}")
-
-curl "${CURL_ARGS[@]}" "$URL" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print(f\"Found {d['count']} agent(s):\")
-print()
-for a in d['agents']:
-    fb = f\"{a['feedbackCount']} fb ({a['positiveCount']}+ / {a['negativeCount']}-)\"
-    print(f\"  #{a['agentId']} — owner: {a['owner'][:12]}... | {fb}\")
-" 2>/dev/null || curl "${CURL_ARGS[@]}" "$URL"
+printf '%s' "$BODY" | jq -r '
+  "Found \(.count) agent(s):",
+  "",
+  ( .agents[]
+    | "  #\(.agentId) — owner \(.owner[0:12])... | \(.feedbackCount) fb (\(.positiveCount)+ / \(.negativeCount)-)" )
+' || {
+  echo "Could not parse the response. Raw body:" >&2
+  printf '%s\n' "$BODY" >&2
+  exit 1
+}
