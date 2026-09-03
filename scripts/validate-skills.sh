@@ -35,52 +35,63 @@ fm_value() {
   '
 }
 
+# Resolve the official Agent Skills reference validator once. It is the
+# authority on frontmatter; this script must never invent competing rules.
+SKILLS_REF=""
+resolve_skills_ref() {
+  if command -v skills-ref >/dev/null 2>&1; then
+    SKILLS_REF="skills-ref"
+  elif command -v npx >/dev/null 2>&1 \
+      && npx --yes skills-ref@latest --version >/dev/null 2>&1; then
+    SKILLS_REF="npx --yes skills-ref@latest"
+  fi
+}
+
+# The spec is the source of truth for frontmatter: name, description, license,
+# compatibility, metadata, allowed-tools. Anything else fails validation.
 check_frontmatter() {
-  local skill_md="$1" dir_name="$2"
+  local skill_dir="$1"
 
-  if [ "$(head -1 "$skill_md")" != "---" ]; then
-    fail "SKILL.md must start with a '---' frontmatter delimiter"
-    return
-  fi
-  if [ "$(frontmatter "$skill_md" | wc -l | tr -d ' ')" = "0" ]; then
-    fail "frontmatter block is empty or unterminated"
-    return
-  fi
-
-  local name desc
-  name="$(fm_value "$skill_md" name)"
-  desc="$(fm_value "$skill_md" description)"
-
-  if [ -z "$name" ]; then
-    fail "frontmatter is missing required key 'name'"
-  elif [ "$name" != "$dir_name" ]; then
-    fail "frontmatter name '$name' does not match directory name '$dir_name'"
+  if [ -z "$SKILLS_REF" ]; then
+    warn "official validator unavailable — frontmatter not checked against the spec"
   else
-    pass "frontmatter name matches directory"
-  fi
-
-  if [ -z "$desc" ]; then
-    fail "frontmatter is missing required key 'description'"
-  else
-    local len=${#desc}
-    if [ "$len" -lt 40 ]; then
-      fail "description is only $len chars — too short to drive skill selection"
-    elif [ "$len" -gt 1024 ]; then
-      fail "description is $len chars — exceeds the 1024 char limit"
+    local out
+    if out="$($SKILLS_REF validate "$skill_dir" 2>&1)"; then
+      pass "passes skills-ref validate"
     else
-      pass "description length ($len chars)"
+      fail "fails the official Agent Skills spec:"
+      printf '%s\n' "$out" | sed 's/^/         /'
     fi
   fi
 
-  local version
-  version="$(fm_value "$skill_md" version)"
-  if [ -z "$version" ]; then
-    warn "frontmatter has no 'version' key"
-  elif ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-    fail "version '$version' is not valid semver (MAJOR.MINOR.PATCH)"
-  else
-    pass "version $version is valid semver"
-  fi
+  # Not covered by skills-ref: we require a semver version under metadata so
+  # releases are traceable. A top-level `version:` key is NOT valid — the spec
+  # allows only the six fields above, and metadata values must be strings.
+  local skill_md="$skill_dir/SKILL.md" version
+  version="$(awk '
+    NR==1 && $0!="---" { exit }
+    NR==1 { next }
+    /^---$/ { exit }
+    /^version:/ { print "TOPLEVEL"; exit }
+    /^metadata:/ { inmeta=1; next }
+    inmeta && /^[^ \t]/ { inmeta=0 }
+    inmeta && /^[ \t]+version:/ {
+      sub(/^[ \t]+version:[ \t]*/, ""); gsub(/"/, ""); print; exit
+    }
+  ' "$skill_md")"
+
+  case "$version" in
+    TOPLEVEL)
+      fail "'version' is a top-level key — the spec forbids it; move it under 'metadata'" ;;
+    "")
+      warn "no metadata.version — releases will not be traceable" ;;
+    *)
+      if printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+        pass "metadata.version $version is valid semver"
+      else
+        fail "metadata.version '$version' is not semver (MAJOR.MINOR.PATCH)"
+      fi ;;
+  esac
 }
 
 check_links() {
@@ -222,6 +233,12 @@ main() {
   fi
 
   echo "${BOLD}Validating ${#skills[@]} skill(s)${RESET}"
+  resolve_skills_ref
+  if [ -n "$SKILLS_REF" ]; then
+    echo "  using official validator: $SKILLS_REF"
+  else
+    echo "  ${YELLOW}note${RESET} skills-ref unavailable (needs node/npx) — spec checks skipped"
+  fi
   command -v shellcheck >/dev/null 2>&1 || echo "  ${YELLOW}note${RESET} shellcheck not installed — skipping lint checks"
   echo
 
@@ -242,7 +259,7 @@ main() {
       continue
     fi
 
-    check_frontmatter "$skill_md" "$skill_name"
+    check_frontmatter "$skill_dir"
     check_links "$skill_md" "$skill_dir"
     check_script_refs "$skill_md" "$skill_dir"
     check_scripts "$skill_dir"

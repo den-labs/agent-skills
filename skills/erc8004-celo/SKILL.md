@@ -1,6 +1,7 @@
 ---
 name: erc8004-celo
-version: 1.0.0
+metadata:
+  version: "1.0.1"
 description: Register and manage AI agent identities on Celo using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, or interact with the ERC-8004 identity and reputation registries on Celo mainnet or Celo Sepolia testnet. Also covers what makes Celo distinct for autonomous agents — paying gas in stablecoins via CIP-64 fee abstraction, x402 agent payments, Self proof-of-humanity, and the Celo Agent Visa and Divvi builder programs.
 ---
 

@@ -12,8 +12,23 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # validate-skills.sh delegates frontmatter checking to the official
+      # skills-ref validator, which it runs through npx.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
       - name: Install shellcheck and jq
         run: sudo apt-get update && sudo apt-get install -y shellcheck jq
+
+      # skills-ref validates only its first path argument and silently ignores
+      # the rest, so each skill must be a separate invocation.
+      - name: Validate against the Agent Skills spec
+        run: |
+          for skill in skills/*/; do
+            [ -f "$skill/SKILL.md" ] || continue
+            npx --yes skills-ref@latest validate "$skill"
+          done
 
       - name: Validate skill structure
         run: ./scripts/validate-skills.sh

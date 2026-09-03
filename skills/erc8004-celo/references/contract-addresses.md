@@ -1,5 +1,12 @@
 # ERC-8004 Contract Addresses on Celo
 
+> **No Validation Registry.** Only Identity and Reputation are deployed.
+> No Validation Registry address exists on this or any other chain — that
+> part of the ERC-8004 spec is still under revision with the TEE community.
+
+> Addresses verified on-chain with `eth_getCode` on 2026-09-02. Re-check them
+> yourself at any time with `./scripts/verify-addresses.sh` from the repo root.
+
 ## Celo Mainnet (Chain ID: 42220)
 
 | Contract | Address | Explorer |

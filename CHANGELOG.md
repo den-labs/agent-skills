@@ -4,6 +4,15 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and each skill carries its own semver `version` in its `SKILL.md` frontmatter.
 
+## [1.0.1] - 2026-09-03
+
+### Fixed
+
+- **All four skills failed the official Agent Skills spec.** `version` was added as a top-level frontmatter key in 1.0.0, but the spec allows only `name`, `description`, `license`, `compatibility`, `metadata` and `allowed-tools`. Version now lives at `metadata.version` as a string, and `skills-ref validate` passes on all four.
+- `scripts/validate-skills.sh` now delegates frontmatter checking to the official `skills-ref` validator instead of enforcing its own invented rules — the previous version actively *required* the key that broke the spec, and reported 104 passing checks while every skill was invalid.
+- CI runs `skills-ref validate` per skill. It validates only its first path argument and ignores the rest, so each skill is a separate invocation.
+- `references/contract-addresses.md` for both chains now carries the "no Validation Registry deployed" note that 1.0.0 added only to `SKILL.md` and `api-reference.md`.
+
 ## [1.0.0] - 2026-09-03
 
 ### Added
