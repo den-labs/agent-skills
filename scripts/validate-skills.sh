@@ -169,6 +169,15 @@ check_scripts() {
       pass "$rel sets strict mode"
     fi
 
+    # macOS still ships bash 3.2, so bash 4+ builtins break users silently.
+    if grep -nE '^[^#]*\b(mapfile|readarray)\b|\$\{[A-Za-z_][A-Za-z0-9_]*(\^\^|,,)|declare -A|local -A' "$script" >/dev/null 2>&1; then
+      fail "$rel uses a bash 4+ feature — macOS ships bash 3.2:"
+      grep -nE '^[^#]*\b(mapfile|readarray)\b|\$\{[A-Za-z_][A-Za-z0-9_]*(\^\^|,,)|declare -A|local -A' "$script" \
+        | sed 's/^/         /'
+    else
+      pass "$rel avoids bash 4+ only features"
+    fi
+
     if command -v shellcheck >/dev/null 2>&1; then
       if ! shellcheck -S warning "$script" >/dev/null 2>&1; then
         fail "$rel has shellcheck warnings — run: shellcheck $rel"

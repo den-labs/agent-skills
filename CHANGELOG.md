@@ -4,6 +4,26 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and each skill carries its own semver `version` in its `SKILL.md` frontmatter.
 
+## [1.2.0] - 2026-09-03
+
+### Added
+
+- **Lifecycle operations.** The skills could create an identity and write feedback, but not maintain either — no way to update an agent's URI, revoke feedback, or read reputation back, all of which the documentation said were possible.
+  - `read-feedback.sh` — reputation summary and reviewer list. Read-only, so it needs only `curl` and `jq`. Supports tag filtering.
+  - `update-agent.sh` — repoints an identity at a new registration file via `setAgentURI`. Checks ownership before spending gas.
+  - `revoke-feedback.sh` — withdraws feedback via `revokeFeedback`.
+- **URI reachability pre-flight.** `register.sh` and `update-agent.sh` now verify the registration file resolves before minting or updating. An identity pointing at a 404 costs gas and is permanent. `SKIP_URI_CHECK=1` bypasses it.
+- ABI helpers for reading structured returns: `e8_decode_uint`, `e8_decode_int128` (two's complement), `e8_decode_address_array`, `e8_encode_string_tail`.
+- A script reference table in both SKILL.md files showing which scripts write and which need Foundry.
+
+### Fixed
+
+- `validate-skills.sh` now rejects bash 4+ builtins (`mapfile`, `readarray`, `${x^^}`, `${x,,}`, associative arrays). macOS ships bash 3.2, where `mapfile` does not exist — caught after shipping it in a first draft of `read-feedback.sh`.
+
+### Notes
+
+All function signatures were taken from the deployed contracts' verified ABIs (resolved through the ERC-1967 proxies), not from documentation: `register(string)`, `setAgentURI(uint256,string)`, `giveFeedback(uint256,int128,uint8,string,string,string,string,bytes32)`, `revokeFeedback(uint256,uint64)`, `getSummary(uint256,address[],string,string)`, `getClients(uint256)`. Selectors were computed with keccak256 and cross-checked against the two already proven live.
+
 ## [1.1.0] - 2026-09-03
 
 ### Changed

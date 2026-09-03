@@ -39,6 +39,11 @@ run_check() {
   PATH="$STUB_DIR:$PATH" "$REPO_ROOT/skills/$skill/scripts/check-agent.sh" "$@" 2>&1
 }
 
+run_feedback() {
+  local skill="$1"; shift
+  PATH="$STUB_DIR:$PATH" "$REPO_ROOT/skills/$skill/scripts/read-feedback.sh" "$@" 2>&1
+}
+
 printf '%sABI helpers (unit)%s\n' "$BOLD" "$RESET"
 
 # shellcheck source=../skills/_shared/erc8004/lib.sh
@@ -107,6 +112,19 @@ for target in "erc8004-celo|mainnet|42220|Celo" \
 
   printf '%s' "$out" | grep -q 'Owner: *0x0000000000000000000000000000000000000000' \
     && bad "owner is not the zero address" || ok "owner is not the zero address"
+
+  # Reputation is a read too, so it must also work without Foundry.
+  out="$(NETWORK="$network" run_feedback "$skill" 1)"
+  if [ $? -ne 0 ]; then
+    bad "reads reputation for agent #1" "$out"
+  else
+    ok "reads reputation without Foundry"
+    if printf '%s' "$out" | grep -qE 'Feedback count: [0-9]+|No feedback yet'; then
+      ok "reputation summary decodes"
+    else
+      bad "reputation summary decodes" "$out"
+    fi
+  fi
 
   # An unminted token reverts; that must read as "not registered", not as a
   # transport error.

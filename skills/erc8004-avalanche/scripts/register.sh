@@ -37,6 +37,7 @@ fi
 
 e8_require_foundry
 e8_require_jq
+e8_require_curl
 e8_load_network
 e8_resolve_signer
 
@@ -47,6 +48,8 @@ if [ "$AGENT_URI" = "ipfs" ]; then
     "agent-registration-avalanche-${E8_CHAIN_ID}.json")"
   e8_ok "Pinned to IPFS: $AGENT_URI"
 fi
+
+e8_check_uri_reachable "$AGENT_URI"
 
 SIGNER="$(e8_signer_address)"
 

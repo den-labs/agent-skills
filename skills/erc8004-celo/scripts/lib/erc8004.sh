@@ -101,6 +101,82 @@ e8_decode_address() {
   printf '0x%s' "$(printf '%s' "${word:24:40}" | tr 'A-Z' 'a-z')"
 }
 
+# e8_decode_uint <32-byte-word> — decodes an unsigned word, refusing anything
+# past the 64-bit range bash arithmetic can represent.
+e8_decode_uint() {
+  local word="${1#0x}"
+  word="${word:0:64}"
+  local high="${word:0:48}" low="${word:48:16}"
+  [ "$high" = "000000000000000000000000000000000000000000000000" ] \
+    || e8_die "Value exceeds the 64-bit range this decoder supports: 0x$word"
+  low="$(printf '%s' "$low" | sed 's/^0*//')"
+  [ -z "$low" ] && { printf '0'; return 0; }
+  printf '%d' $((16#$low))
+}
+
+# e8_decode_int128 <32-byte-word> — decodes a signed int128 in two's complement.
+e8_decode_int128() {
+  local word="${1#0x}"
+  word="${word:0:64}"
+  # int128 occupies the low 16 bytes; sign-extension fills the high 16 bytes.
+  local value_hex="${word:32:32}"
+  # The top nibble decides the sign: 8-f means the high bit is set.
+  case "${value_hex:0:1}" in
+    [89a-fA-F]) ;;
+    *)
+      e8_decode_uint "$(printf '%064s' "$value_hex" | tr ' ' '0')"
+      return 0
+      ;;
+  esac
+
+  # Negative: -(2^128 - value), computed as -(~value + 1). Only the low 64 bits
+  # are representable in bash arithmetic, which covers every realistic value.
+  local inverted low
+  inverted="$(printf '%s' "$value_hex" | tr '0123456789abcdefABCDEF' 'fedcba9876543210FEDCBA')"
+  [ "${inverted:0:16}" = "0000000000000000" ] \
+    || e8_die "Negative value exceeds the 64-bit range this decoder supports."
+  low="$(printf '%s' "${inverted:16:16}" | sed 's/^0*//')"
+  [ -z "$low" ] && low=0
+  printf '%d' $(( -(16#$low + 1) ))
+}
+
+# e8_decode_address_array <abi-encoded-return> — one address per line.
+e8_decode_address_array() {
+  local hex="${1#0x}"
+  [ "${#hex}" -ge 128 ] || return 0
+
+  local offset_hex offset
+  offset_hex="$(printf '%s' "${hex:0:64}" | sed 's/^0*//')"
+  offset=0
+  [ -n "$offset_hex" ] && offset=$((16#$offset_hex))
+
+  local count_hex count
+  count_hex="$(printf '%s' "${hex:$((offset * 2)):64}" | sed 's/^0*//')"
+  [ -z "$count_hex" ] && return 0
+  count=$((16#$count_hex))
+
+  local i word_start
+  for (( i = 0; i < count; i++ )); do
+    word_start=$((offset * 2 + 64 + i * 64))
+    printf '0x%s\n' "$(printf '%s' "${hex:$((word_start + 24)):40}" | tr 'A-Z' 'a-z')"
+  done
+}
+
+# e8_encode_string_tail <string> — [length][data right-padded to 32 bytes].
+e8_encode_string_tail() {
+  local str="$1" hexdata padding
+  if [ -z "$str" ]; then
+    printf '%064x' 0
+    return 0
+  fi
+  hexdata="$(printf '%s' "$str" | od -An -tx1 | tr -d ' \n')"
+  printf '%064x' $(( ${#hexdata} / 2 ))
+  printf '%s' "$hexdata"
+  padding=$(( (64 - ${#hexdata} % 64) % 64 ))
+  [ "$padding" -gt 0 ] && printf '%0*d' "$padding" 0
+  return 0
+}
+
 # e8_decode_string <abi-encoded-return> — decodes a single dynamic string.
 # Layout: [32b offset][32b length][data, right-padded to a 32-byte boundary].
 e8_decode_string() {
@@ -175,6 +251,49 @@ e8_signer_address() {
   elif [ -n "${PRIVATE_KEY:-}" ]; then
     cast wallet address --private-key "$PRIVATE_KEY" 2>/dev/null || true
   fi
+}
+
+# --- Pre-flight -------------------------------------------------------------
+
+# e8_check_uri_reachable <agent-uri>
+# An agent identity is only useful if its registration file actually resolves.
+# Minting one that points at a 404 costs gas and is permanent, so check first.
+# Set SKIP_URI_CHECK=1 to bypass (for a URI that is not yet published).
+e8_check_uri_reachable() {
+  local uri="$1"
+
+  [ "${SKIP_URI_CHECK:-}" = "1" ] && return 0
+
+  case "$uri" in
+    ipfs://*|data:*)
+      # Not fetchable over plain HTTP without picking a gateway for the user.
+      return 0
+      ;;
+    http://*|https://*) ;;
+    *)
+      e8_warn "'$uri' is not an http(s), ipfs:// or data: URI. Registering it anyway."
+      return 0
+      ;;
+  esac
+
+  local code
+  code="$(curl -sS -L -o /dev/null -m 15 -w '%{http_code}' "$uri" 2>/dev/null || printf '000')"
+
+  case "$code" in
+    2*)
+      e8_ok "Registration file is reachable ($uri)"
+      ;;
+    000)
+      e8_warn "Could not reach $uri (network error or timeout)."
+      e8_warn "Registering a URI that does not resolve leaves a dead identity on chain."
+      e8_warn "Set SKIP_URI_CHECK=1 if you intend to publish it later."
+      ;;
+    *)
+      e8_warn "$uri returned HTTP $code."
+      e8_warn "Registering a URI that does not resolve leaves a dead identity on chain."
+      e8_warn "Set SKIP_URI_CHECK=1 if this is intentional."
+      ;;
+  esac
 }
 
 # --- Confirmation gate ------------------------------------------------------

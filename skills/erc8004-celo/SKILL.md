@@ -1,7 +1,7 @@
 ---
 name: erc8004-celo
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
 description: Register and manage AI agent identities on Celo using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, or interact with the ERC-8004 identity and reputation registries on Celo mainnet or Celo Sepolia testnet. Also covers what makes Celo distinct for autonomous agents — paying gas in stablecoins via CIP-64 fee abstraction, x402 agent payments, Self proof-of-humanity, and the Celo Agent Visa and Divvi builder programs.
 ---
 
@@ -91,6 +91,32 @@ NETWORK=mainnet ./scripts/check-agent.sh 1       # Celo mainnet — read-only, n
 VALUE_DECIMALS=2 ./scripts/give-feedback.sh 1 9950 uptime   # 99.50%
 ```
 
+### 5. Read an agent's reputation
+
+Also read-only — no Foundry, no signer, no gas.
+
+```bash
+./scripts/read-feedback.sh <agent-id>            # summary across all reviewers
+./scripts/read-feedback.sh <agent-id> starred    # filter by tag
+```
+
+### 6. Maintain the identity
+
+An agent's registration file changes over time; the identity NFT points at it,
+so keep the pointer current.
+
+```bash
+# Point the agent at a new registration file (owner only)
+./scripts/update-agent.sh <agent-id> https://myagent.xyz/agent-v2.json
+
+# Withdraw feedback you published (original submitter only)
+./scripts/revoke-feedback.sh <agent-id> <feedback-index>
+```
+
+`update-agent.sh` and `register.sh` check that the URI actually resolves before
+spending gas — an identity pointing at a 404 is permanent and useless. Set
+`SKIP_URI_CHECK=1` if you intend to publish the file later.
+
 ### Going to mainnet
 
 ```bash
@@ -155,6 +181,17 @@ Start at https://www.celopg.eco/insights/build-your-agent-on-celo
 ### Celo is an L2
 
 Celo migrated from its own L1 to an Ethereum L2 on the OP Stack in March 2025. Practical consequences: finality and bridging follow OP Stack semantics, not the old Celo L1's. Recent and upcoming upgrades — Jovian (Q1 2026, OP Stack alignment), faster finality via Espresso pre-confirmations (H1 2026), and Fusaka (Q2 2026).
+
+## Scripts
+
+| Script | Writes? | Needs Foundry? |
+|---|---|---|
+| `check-agent.sh` | No | No — curl + jq |
+| `read-feedback.sh` | No | No — curl + jq |
+| `register.sh` | Yes | Yes |
+| `update-agent.sh` | Yes | Yes |
+| `give-feedback.sh` | Yes | Yes |
+| `revoke-feedback.sh` | Yes | Yes |
 
 ## Registration File Format
 

@@ -130,6 +130,34 @@ for skill in erc8004-celo erc8004-avalanche; do
     bad "register waits for a confirmation"
   fi
 
+  # --- The new lifecycle writes obey the same guards. ---
+  NETWORK=mainnet PRIVATE_KEY=0xabc run "$skill" update-agent.sh 1 "https://example.com/a.json"
+  assert_rc 1 "mainnet update-agent refuses without a TTY"
+  assert_no_cast_send "mainnet update-agent sent no transaction"
+
+  NETWORK=mainnet PRIVATE_KEY=0xabc run "$skill" revoke-feedback.sh 1 0
+  assert_rc 1 "mainnet revoke-feedback refuses without a TTY"
+  assert_no_cast_send "mainnet revoke-feedback sent no transaction"
+
+  unset PRIVATE_KEY ERC8004_ACCOUNT
+  NETWORK="$testnet" run "$skill" revoke-feedback.sh 1 0
+  assert_rc 1 "revoke-feedback without a signer fails"
+  assert_no_cast_send "no-signer revoke sent no transaction"
+
+  NETWORK="$testnet" PRIVATE_KEY=0xabc run "$skill" revoke-feedback.sh 1 "not-a-number"
+  assert_rc 1 "non-numeric feedback index is rejected"
+  assert_no_cast_send "invalid index sent no transaction"
+
+  NETWORK="$testnet" PRIVATE_KEY=0xabc run "$skill" update-agent.sh "abc" "https://example.com/a.json"
+  assert_rc 1 "non-numeric agent id is rejected by update-agent"
+  assert_no_cast_send "invalid update-agent input sent no transaction"
+
+  run "$skill" update-agent.sh 1
+  assert_rc 1 "update-agent without a URI shows usage"
+
+  run "$skill" read-feedback.sh
+  assert_rc 1 "read-feedback with no argument shows usage"
+
   # --- ERC8004_YES is the documented automation escape hatch. ---
   NETWORK=mainnet ERC8004_YES=1 PRIVATE_KEY=0xabc run "$skill" give-feedback.sh 1 85 starred
   assert_rc 0 "ERC8004_YES=1 allows mainnet in automation"
