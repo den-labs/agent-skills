@@ -19,6 +19,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Celo fee-abstraction links pointed at `/developer/fee-abstraction`, which redirects; they now use the canonical `/build-on-celo/fee-abstraction/overview`.
 - `CONTRIBUTING.md` still told contributors to put `version` at the top level of frontmatter — the exact mistake that broke every skill in 1.0.0. It now documents `metadata.version` and points at `skills-ref` as the authority.
 
+### Verified
+
+The write path was executed end to end against a local `anvil` fork of Avalanche C-Chain — real deployed contracts, no real funds. All three previously unverified assumptions hold: `cast send --json` returns a usable `status`, `register()` emits a standard ERC-721 `Transfer` (the agent ID decoded from the receipt matched the `cast call` prediction exactly), and the signer argument order is correct. Register → check → update → check → feedback → read → revoke → read all behave correctly, and a genuine revert ("Not authorized") fails loudly instead of reporting success. See `docs/VERIFICATION-2026-09-03.md`.
+
+Note: anvil cannot fork Celo for writes — reads work but every write reverts with empty data, including a no-argument `register()`. Celo is an OP Stack L2 with its own transaction types that anvil does not emulate. The write code is shared between both skills, so verifying it on Avalanche covers the logic; only Celo's transaction layer remains untested.
+
 ### Known limitation
 
 `get-signals.sh` and `get-events.sh` could not be verified against a live API: every `/api/v1/*` path on both oracles returns 401 and no key was available. They follow the documented schema and print the raw body rather than failing silently if a field name differs.
