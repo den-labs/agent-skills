@@ -157,6 +157,8 @@ console.log('Clients:', clients);
 
 ### Validation Registry
 
+> **Not deployed — do not build against this yet.** No Validation Registry address has been published on any chain, and this part of the ERC-8004 spec is still under active revision with the TEE community. The interface below is the proposed shape, included for planning only.
+
 ```typescript
 const validationAbi = parseAbi([
   'function validationRequest(address validatorAddress, uint256 agentId, string requestURI, bytes32 requestHash) external',

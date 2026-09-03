@@ -1,5 +1,6 @@
 ---
 name: trust-score
+version: 1.0.0
 description: Query ERC-8004 agent trust scores from DenScope (Celo) and Ayni (Avalanche). Use this skill when you need to check if an AI agent is trustworthy, get reputation data, view risk signals, or search for registered agents on-chain.
 ---
 

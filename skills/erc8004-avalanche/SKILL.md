@@ -1,67 +1,148 @@
 ---
 name: erc8004-avalanche
-description: Register and manage AI agent identities on Avalanche C-Chain using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, request validation, or interact with ERC-8004 identity/reputation/validation registries on Avalanche mainnet or Fuji testnet.
+version: 1.0.0
+description: Register and manage AI agent identities on Avalanche using ERC-8004 (Trustless Agents). Use this skill when the user wants to register an AI agent on-chain, give or read reputation feedback, or interact with the ERC-8004 identity and reputation registries on Avalanche C-Chain or Fuji testnet. Also covers what makes Avalanche distinct for autonomous agents — running an agent on its own Avalanche L1, cross-chain calls via Interchain Messaging and Teleporter, AvaCloud, and the Retro9000 grant program.
 ---
 
 # ERC-8004: Trustless Agents on Avalanche
 
-Register your AI agent on Avalanche C-Chain with a verifiable on-chain identity, making it discoverable and enabling trust signals through reputation and validation.
+Give your AI agent a verifiable on-chain identity on Avalanche, so it can be discovered, build reputation, and be called from anywhere in the network.
+
+## Why Avalanche for an autonomous agent
+
+Avalanche's distinguishing move is that your agent does not have to share a chain with everyone else:
+
+1. **Your agent can run on its own L1.** Since the Avalanche9000 (Etna) upgrade, what were called Subnets are **Avalanche L1s**, and launching one costs a flat fee from ~1.33 AVAX per validator per month instead of a 2,000 AVAX continuous stake. Validators no longer need to validate the Primary Network. A high-throughput agent gets dedicated blockspace and its own gas rules.
+2. **Every L1 is reachable from every other.** Interchain Messaging (ICM) connects all Avalanche L1s, and Teleporter wraps it in a contract-level API. The useful pattern: keep the agent's **identity on the C-Chain**, where ERC-8004 is deployed and everyone can verify it, and run the agent's **execution on its own L1**, bridging calls over ICM.
+3. **Infrastructure is funded.** Retro9000 is a $40M grant program for teams building Avalanche L1s.
+
+See "Avalanche-specific capabilities" below.
 
 ## What is ERC-8004?
 
-ERC-8004 is an Ethereum standard for trustless agent identity and reputation, deployed on Avalanche:
+An Ethereum standard for trustless agent identity and reputation. It defines three registries:
 
-- **Identity Registry** - ERC-721 based agent IDs (your agent gets an NFT)
-- **Reputation Registry** - Feedback and trust signals from other agents/users
-- **Validation Registry** - Third-party verification of agent work
+| Registry | Status on Avalanche | What it does |
+|---|---|---|
+| **Identity Registry** | Deployed | ERC-721 agent IDs — your agent gets an NFT |
+| **Reputation Registry** | Deployed | Feedback and trust signals from other agents and users |
+| **Validation Registry** | **Not deployed** | Third-party verification of agent work |
 
-Website: https://www.8004.org | Spec: https://eips.ethereum.org/EIPS/eip-8004
+> **The Validation Registry is not usable yet.** That section of the spec is still under active revision with the TEE community, and no Validation Registry address has been published on Avalanche or any other chain. `references/api-reference.md` documents the proposed interface for planning purposes only — do not build against it yet.
+
+ERC-8004 itself is still a **Draft** EIP. The interfaces below are deployed and stable in practice, but the standard can still change.
+
+Spec: https://eips.ethereum.org/EIPS/eip-8004 · Directory: https://www.8004.org · Explorer: https://8004scan.io
 
 ## Contract Addresses
+
+Identity and Reputation are deterministic deployments — the same addresses appear on 40+ chains. Verified on-chain 2026-09-02.
 
 | Chain | Identity Registry | Reputation Registry |
 |---|---|---|
 | Avalanche Mainnet (43114) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` | `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63` |
 | Avalanche Fuji (43113) | `0x8004A818BFB912233c491871b3d84c89A494BD9e` | `0x8004B663056A597Dffe9eCcC1965A193B7388713` |
 
-Explorer links:
-- Mainnet: https://snowtrace.io/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
-- Fuji: https://testnet.snowtrace.io/address/0x8004A818BFB912233c491871b3d84c89A494BD9e
+These are C-Chain deployments. An agent living on its own L1 still registers its identity here.
+
+Full detail, including how to re-verify these yourself: `references/contract-addresses.md`
 
 ## Quick Start
 
-### 1. Register Your Agent
+**Scripts default to Fuji.** Mainnet is always an explicit choice, and asks for confirmation before spending anything.
+
+### 1. Set up a signer
+
+Prefer an encrypted keystore over a raw key in your environment:
 
 ```bash
-# Set environment variables
-export AVALANCHE_RPC_URL="https://api.avax.network/ext/bc/C/rpc"
-export PRIVATE_KEY="your-private-key"
+cast wallet import my-agent --interactive   # prompts for the key, then a passphrase
+export ERC8004_ACCOUNT=my-agent
+```
 
-# Register with a URI pointing to your agent's registration file
+Hardware wallets work too: `export ERC8004_LEDGER=1`. A raw `PRIVATE_KEY` is still accepted but warns.
+
+### 2. Register your agent
+
+```bash
+# Against a registration file you already host
 ./scripts/register.sh "https://myagent.xyz/agent.json"
 
-# Or register with IPFS (requires PINATA_JWT)
+# Or build the file and pin it to IPFS in one step
 export PINATA_JWT="your-pinata-jwt"
-./scripts/register.sh "ipfs"
+AGENT_NAME="My Agent" AGENT_DESCRIPTION="Does a useful thing" \
+  ./scripts/register.sh ipfs
 ```
 
-### 2. Check Agent Registration
+The script waits for a confirmation, fails loudly if the transaction reverts, and prints the new agent ID decoded from the ERC-721 `Transfer` event.
+
+### 3. Check a registration
 
 ```bash
-# Check if an agent is registered and get its info
-./scripts/check-agent.sh <agent-id>
+./scripts/check-agent.sh <agent-id>              # Fuji
+NETWORK=mainnet ./scripts/check-agent.sh 1       # C-Chain — read-only, no signer needed
 ```
 
-### 3. Give Feedback
+### 4. Give feedback
 
 ```bash
-# Give reputation feedback to an agent
-./scripts/give-feedback.sh <agent-id> <value> <tag1> <tag2>
+./scripts/give-feedback.sh <agent-id> 85 starred
+VALUE_DECIMALS=2 ./scripts/give-feedback.sh 1 9950 uptime   # 99.50%
 ```
+
+### Going to mainnet
+
+```bash
+NETWORK=mainnet ./scripts/register.sh "https://myagent.xyz/agent.json"
+# → prompts: "This will send a real transaction on mainnet and spend gas."
+```
+
+In CI or any non-interactive shell the scripts refuse to touch mainnet unless you set `ERC8004_YES=1` deliberately.
+
+## Avalanche-specific capabilities
+
+### Identity on the C-Chain, execution on your own L1
+
+The recommended architecture for a serious agent on Avalanche:
+
+```
+    C-Chain                             Your Avalanche L1
+ ┌──────────────────────┐            ┌──────────────────────┐
+ │ ERC-8004 Identity    │            │ Agent execution      │
+ │ ERC-8004 Reputation  │◄──  ICM  ──│ Custom gas token     │
+ │ (public, verifiable) │            │ Dedicated throughput │
+ └──────────────────────┘            └──────────────────────┘
+```
+
+Identity and reputation stay where everyone already looks for them; the agent's own workload gets blockspace it does not have to compete for. Reference the L1 in the agent's registration file under `services` so callers can find it.
+
+### Interchain Messaging (ICM) and Teleporter
+
+ICM is the message layer between Avalanche L1s; Teleporter is the Solidity framework on top of it. An agent on one L1 can call a contract on another — or read its own ERC-8004 reputation from the C-Chain — without a third-party bridge.
+
+Use it when your agent's reputation lives on the C-Chain but its logic runs elsewhere.
+
+### AvaCloud
+
+A managed portal for launching an L1 without running validator infrastructure yourself. Includes interoperability, gas relaying, Safe multisig, VRF, and wallet-as-a-service. This is the fastest path from "my agent needs its own chain" to a running chain.
+
+https://build.avax.network/integrations/avacloud
+
+### Avalanche9000 in one paragraph
+
+The Etna upgrade activated on mainnet in December 2024 and is the largest change since launch. Subnets became L1s, the economics of running one dropped by orders of magnitude, and validators were decoupled from the Primary Network. If you are reading older material that describes Subnets and a 2,000 AVAX stake, it predates this.
+
+### Retro9000
+
+A $40M retroactive grant program rewarding teams that build Avalanche L1s. Relevant if the agent you are registering is the front end of real infrastructure.
+
+### Tooling worth knowing
+
+HyperSDK for custom VMs, Vryx for throughput, Firewood for state storage, and Avalanche Warp Messaging (AWM) as the primitive underneath ICM.
 
 ## Registration File Format
 
-Your agent's registration file (see `assets/templates/registration.json`):
+See `assets/templates/registration.json` and `references/registration-format.md`.
 
 ```json
 {
@@ -89,89 +170,71 @@ Your agent's registration file (see `assets/templates/registration.json`):
 ## Key Concepts
 
 ### Agent Identity (ERC-721 NFT)
-- Each agent gets a unique `agentId` (tokenId) on registration
-- The NFT owner controls the agent's profile and metadata
-- Agents are globally identified by `eip155:43114:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` + `agentId`
+- Each agent gets a unique `agentId` (tokenId) at registration.
+- The NFT owner controls the agent's profile and metadata; transferring the NFT transfers control.
+- Agents are globally addressed as `eip155:43114:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` plus `agentId`.
 
-### Reputation System
-- Anyone can give feedback (except the agent owner themselves)
-- Feedback includes a value (int128) with decimals (0-18) plus optional tags
-- Common tags: `starred` (quality 0-100), `reachable` (binary), `uptime` (percentage)
-- Feedback can be revoked by the original submitter
-- Agents can append responses to feedback
-
-### Validation
-- Agents request validation from validator contracts
-- Validators respond with a score (0-100)
-- Supports stake-secured re-execution, zkML, TEE attestation
+### Reputation
+- Anyone can give feedback except the agent owner.
+- Feedback carries a value (`int128`) with decimals (0–18) plus up to two tags.
+- Common tags: `starred` (quality 0–100), `reachable` (binary), `uptime` (percentage, `VALUE_DECIMALS=2`).
+- The original submitter can revoke their feedback; the agent can append a response.
+- Feedback is public and permanent. The scripts say so before you send it on mainnet.
 
 ## Environment Variables
 
-| Variable | Description | Required |
+### Signing — set exactly one
+
+| Variable | Description |
+|---|---|
+| `ERC8004_ACCOUNT` | Encrypted keystore account name (recommended) |
+| `ERC8004_LEDGER` | Set to `1` to sign with a Ledger |
+| `ERC8004_TREZOR` | Set to `1` to sign with a Trezor |
+| `ERC8004_HD_PATH` | Optional derivation path for a hardware wallet |
+| `PRIVATE_KEY` | Raw hex key — discouraged, warns when used |
+
+### Everything else
+
+| Variable | Description | Default |
 |---|---|---|
-| `AVALANCHE_RPC_URL` | Avalanche C-Chain RPC endpoint | Yes (defaults to public RPC) |
-| `PRIVATE_KEY` | Wallet private key for signing transactions | Yes |
-| `PINATA_JWT` | Pinata API JWT for IPFS uploads | No (only for IPFS registration) |
-| `AGENT_NAME` | Agent display name | No |
-| `AGENT_DESCRIPTION` | Agent description | No |
-| `AGENT_IMAGE` | Avatar URL | No |
-| `SNOWTRACE_API_KEY` | Snowtrace API key for verification | No |
+| `NETWORK` | `fuji` or `mainnet` | `fuji` |
+| `ERC8004_YES` | Set to `1` to skip the mainnet confirmation in automation | unset |
+| `AVALANCHE_RPC_URL` | Override the RPC endpoint | public Avalanche RPC |
+| `PINATA_JWT` | Pinata JWT, only for IPFS registration | — |
+| `AGENT_NAME` | Agent display name — required for `register.sh ipfs` | — |
+| `AGENT_DESCRIPTION` | Agent description | empty |
+| `AGENT_IMAGE` | Avatar URL | empty |
+| `AGENT_SERVICES` | JSON array of service endpoints | `[]` |
+| `AGENT_X402_SUPPORT` | `true` or `false` | `false` |
+| `AGENT_SUPPORTED_TRUST` | Comma-separated trust models | `reputation` |
+| `VALUE_DECIMALS` | Decimal places for a feedback value | `0` |
 
 ## Avalanche Network Details
 
-| Parameter | Mainnet | Fuji Testnet |
+| Parameter | Mainnet (C-Chain) | Fuji Testnet |
 |---|---|---|
 | Chain ID | 43114 | 43113 |
 | RPC URL | `https://api.avax.network/ext/bc/C/rpc` | `https://api.avax-test.network/ext/bc/C/rpc` |
 | Explorer | https://snowtrace.io | https://testnet.snowtrace.io |
 | Currency | AVAX | AVAX (test) |
-| Faucet | - | https://faucet.avax.network |
+| Faucet | — | https://faucet.avax.network |
 
-## Workflow
+## Prerequisites
 
-1. **Get AVAX** - You need AVAX for gas fees (~0.01-0.05 AVAX for registration)
-2. **Create Registration File** - Generate a JSON following the registration format
-3. **Upload to IPFS** (optional) - Pin via Pinata or host at any URL
-4. **Register On-Chain** - Call `register(agentURI)` on the Identity Registry
-5. **Set Metadata** - Optionally set on-chain metadata and agent wallet
-6. **Receive Feedback** - Other agents/users can give reputation signals
-7. **Request Validation** - Optionally request third-party verification
+- **Foundry** (`cast`) — `curl -L https://foundry.paradigm.xyz | bash && foundryup`
+- **jq** — `brew install jq`
+- A funded account on the target network.
 
-## Using with cast (Foundry)
-
-```bash
-# Register an agent with a URI
-cast send 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
-  "register(string)" "https://myagent.xyz/agent.json" \
-  --rpc-url https://api.avax.network/ext/bc/C/rpc \
-  --private-key $PRIVATE_KEY
-
-# Read agent URI
-cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
-  "tokenURI(uint256)" 1 \
-  --rpc-url https://api.avax.network/ext/bc/C/rpc
-
-# Give feedback (value=85, decimals=0, tag1="starred")
-cast send 0x8004BAa17C55a88189AE136b182e5fdA19dE9b63 \
-  "giveFeedback(uint256,int128,uint8,string,string,string,string,bytes32)" \
-  1 85 0 "starred" "" "" "" 0x0000000000000000000000000000000000000000000000000000000000000000 \
-  --rpc-url https://api.avax.network/ext/bc/C/rpc \
-  --private-key $PRIVATE_KEY
-
-# Get reputation summary
-cast call 0x8004BAa17C55a88189AE136b182e5fdA19dE9b63 \
-  "getSummary(uint256,address[],string,string)" \
-  1 "[0xREVIEWER_ADDRESS]" "starred" "" \
-  --rpc-url https://api.avax.network/ext/bc/C/rpc
-```
-
-## Using with viem/ethers.js
+## Using with viem / ethers.js
 
 See `references/api-reference.md` for complete TypeScript examples.
 
 ## Links
 
 - [ERC-8004 Spec](https://eips.ethereum.org/EIPS/eip-8004)
-- [8004.org](https://www.8004.org)
-- [GitHub: erc-8004-contracts](https://github.com/agent0-labs/erc-8004-contracts)
-- [Snowtrace Explorer](https://snowtrace.io)
+- [erc-8004-contracts](https://github.com/erc-8004/erc-8004-contracts)
+- [8004.org](https://www.8004.org) · [8004scan explorer](https://8004scan.io)
+- [Building on Avalanche9000](https://avax.network/blog/building-on-avalanche9000)
+- [Avalanche Builder Hub](https://build.avax.network) · [AvaCloud](https://build.avax.network/integrations/avacloud)
+- [Retro9000 grants](https://avax.network/blog/retro9000-a-40m-grant-program-rewards-developers-building-avalanche-l1s)
+- [Snowtrace](https://snowtrace.io)

@@ -1,5 +1,6 @@
 ---
 name: alchemy-contribute
+version: 1.0.0
 description: Automates the end-to-end contribution workflow to Alchemy open-source repos (github.com/alchemyplatform/*) — read CONTRIBUTING, fork via gh, clone, set upstream, install deps with the right package manager, create a feature branch, run lint/tests, stage/commit, push, and open a Pull Request. Use this skill whenever the user wants to contribute to, hack on, open a PR on, or fork any Alchemy repo (alchemy-sdk-js, aa-sdk, alchemy-web3, alchemy-docs, modular-account, light-account, account-kit, etc.), or says things like "contribuir a alchemy", "abrir PR a alchemy", "fork alchemyplatform", "PR en alchemy-sdk-js", "contribuir open source en alchemy". Also applicable as a generic OSS contribution playbook when the target is not Alchemy — the same 11-step flow works on any GitHub repo.
 ---
 
