@@ -4,6 +4,13 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and each skill carries its own semver `version` in its `SKILL.md` frontmatter.
 
+## [1.5.0] - 2026-09-03
+
+### Fixed
+
+- **`get-signals.sh` and `get-events.sh` parsed guessed field names.** Written without a live API to check against, they looked for `type`, `detectedAt` and `message`. The real handlers return `signalKind`, `title`, `whyItMatters`, `triggeredAt`, `resolvedAt` and `sourceTxHash` for signals, and `kind`, `blockNumber`, `logIndex`, `txHash` and `eventTimestamp` inside a `pagination` envelope for events. Names now come from the route handlers themselves.
+- `get-signals.sh` now shows the signal title and why it matters, and marks whether a signal is open or resolved. `get-events.sh` reports the total and whether more pages exist.
+
 ## [1.4.0] - 2026-09-03
 
 ### Fixed

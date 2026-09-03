@@ -30,9 +30,12 @@ printf '%s' "$BODY" | jq -r '
       "\($s | length) signal(s):",
       "",
       ( $s[]
-        | "  [\(.severity // "unknown" | ascii_upcase)] \(.type // "signal")",
-          "      \(.description // .message // "no description")",
-          "      detected: \(.detectedAt // .createdAt // "unknown")",
+        | "  [\(.severity // "unknown" | ascii_upcase)] \(.signalKind // "signal")",
+          "      \(.title // "untitled")",
+          (if .description then "      \(.description)" else empty end),
+          (if .whyItMatters then "      why: \(.whyItMatters)" else empty end),
+          "      triggered: \(.triggeredAt // "unknown")\(if .resolvedAt then "   resolved: \(.resolvedAt)" else "   (open)" end)",
+          (if .sourceTxHash then "      tx: \(.sourceTxHash)" else empty end),
           ""
       )
     end

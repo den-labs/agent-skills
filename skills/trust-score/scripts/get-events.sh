@@ -30,12 +30,16 @@ printf '%s' "$BODY" | jq -r '
   | if ($e | length) == 0 then
       "No events recorded for this agent."
     else
-      "\($e | length) event(s), newest first:",
+      "\($e | length) of \(.pagination.total // ($e | length)) event(s), newest first:",
       "",
       ( $e[]
-        | "  \(.timestamp // .blockTimestamp // "unknown")  \(.type // .eventName // "event")",
-          "      block \(.blockNumber // "?")  tx \((.txHash // .transactionHash // "?")[0:18])…"
-      )
+        | "  \(.eventTimestamp // .createdAt // "unknown")  \(.kind // "event")",
+          "      block \(.blockNumber // "?")  log \(.logIndex // "?")  tx \((.txHash // "?")[0:18])…"
+      ),
+      "",
+      (if (.pagination.hasMore // false)
+       then "More available — re-run with a higher limit (max 100)."
+       else empty end)
     end
 ' || {
   echo "Could not parse the response. Raw body:" >&2
