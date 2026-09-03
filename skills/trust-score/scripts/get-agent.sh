@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/trust.sh"
 
 ORACLE="${1:?Usage: get-agent.sh <oracle> <chain> <agentId>}"
-CHAIN="${2:?Missing chain (celo, celo-sepolia, avalanche, fuji, or a chain ID)}"
+CHAIN="${2:?Missing chain (celo, celo-sepolia, skale-base, avalanche, fuji, or a chain ID)}"
 AGENT_ID="${3:?Missing agent ID}"
 
 ts_require_jq

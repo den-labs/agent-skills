@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/trust.sh"
 
 ORACLE="${1:?Usage: search-agents.sh <oracle> <chain> [query] [limit]}"
-CHAIN="${2:?Missing chain (celo, celo-sepolia, avalanche, fuji, or a chain ID)}"
+CHAIN="${2:?Missing chain (celo, celo-sepolia, skale-base, avalanche, fuji, or a chain ID)}"
 QUERY="${3:-}"
 LIMIT="${4:-10}"
 

@@ -19,7 +19,7 @@ ts_require_jq() {
 ts_resolve_oracle() {
   case "$1" in
     denscope) TS_BASE_URL="https://www.denscope.xyz" ;;
-    ayni)     TS_BASE_URL="https://ayni-alpha.vercel.app" ;;
+    ayni)     TS_BASE_URL="https://ayni.denscope.xyz" ;;
     *)        ts_die "Unknown oracle '$1'. Use 'denscope' or 'ayni'." ;;
   esac
 }
@@ -29,11 +29,12 @@ ts_resolve_chain() {
   case "$1" in
     celo)          TS_CHAIN_ID=42220 ;;
     celo-sepolia)  TS_CHAIN_ID=11142220 ;;
+    skale-base)    TS_CHAIN_ID=1187947933 ;;
     avalanche)     TS_CHAIN_ID=43114 ;;
     fuji)          TS_CHAIN_ID=43113 ;;
     *)
       printf '%s' "$1" | grep -qE '^[0-9]+$' \
-        || ts_die "Unknown chain '$1'. Use celo, celo-sepolia, avalanche, fuji, or a numeric chain ID."
+        || ts_die "Unknown chain '$1'. Use celo, celo-sepolia, skale-base, avalanche, fuji, or a numeric chain ID."
       TS_CHAIN_ID="$1"
       ;;
   esac

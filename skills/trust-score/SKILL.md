@@ -7,26 +7,43 @@ metadata:
 description: Query ERC-8004 agent trust scores from DenScope (Celo) and Ayni (Avalanche). Use this skill when you need to check if an AI agent is trustworthy, get reputation data, view risk signals, or search for registered agents on-chain.
 ---
 
-# Trust Score — ERC-8004 Agent Trust Oracle
+# Trust Score — ERC-8004 Reputation Index
 
 Query trust scores, reputation data, and risk signals for autonomous AI agents registered under ERC-8004.
 
 ## What This Does
 
-This skill lets you check the trustworthiness of any ERC-8004 agent by querying DenScope (Celo) or Ayni (Avalanche) trust oracles. Use it before interacting with an unknown agent, when evaluating agent reliability, or when building trust-aware workflows.
+This skill queries DenScope or Ayni for an agent's trust score, reputation and risk signals. Use it before interacting with an unknown agent, when evaluating reliability, or when building trust-aware workflows.
 
-## Supported Oracles
+**These are indexers, not oracles.** They read ERC-8004 events from chain, index them, and compute scores served over HTTP. Nothing they produce is written back on-chain — an oracle moves data the other way. The name matters when deciding what to trust: their scores are a service's interpretation, while the underlying feedback is on-chain fact anyone can verify.
 
-| Oracle | Chain | Chain ID | Base URL |
-|---|---|---|---|
-| DenScope | Celo Mainnet | 42220 | www.denscope.xyz |
-| DenScope | Celo Sepolia | 11142220 | www.denscope.xyz |
-| Ayni | Avalanche C-Chain | 43114 | ayni-alpha.vercel.app |
-| Ayni | Fuji Testnet | 43113 | ayni-alpha.vercel.app |
+## Indexers and the chains they cover
 
-> **DenScope moved to `www.denscope.xyz`.** The old `denscope.vercel.app`
-> host still 301-redirects, but the scripts now call the canonical domain
-> directly and follow redirects.
+| Indexer | Chains | Base URL |
+|---|---|---|
+| **DenScope** | Celo (42220), Celo Sepolia (11142220), SKALE Base (1187947933) | `www.denscope.xyz` |
+| **Ayni** | Avalanche C-Chain (43114), Fuji (43113) | `ayni.denscope.xyz` |
+
+Chain names accepted by the scripts: `celo`, `celo-sepolia`, `skale-base`,
+`avalanche`, `fuji`, or any numeric chain ID.
+
+> **Both hosts have moved.** DenScope was `denscope.vercel.app`; Ayni was
+> `ayni-alpha.vercel.app`. The old hosts still redirect, but the scripts call
+> the canonical domains directly.
+
+## Reading from the chain instead
+
+The ERC-8004 skills read reputation straight from the Reputation Registry with
+no API key and no third party:
+
+```bash
+# from the erc8004-celo or erc8004-avalanche skill
+NETWORK=mainnet scripts/read-feedback.sh 1
+```
+
+Use that for ground truth about one agent. Use an indexer for what the chain
+does not give cheaply: an aggregated score, risk signals, sybil detection, and
+search across agents.
 
 ## Quick Start
 
