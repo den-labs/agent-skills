@@ -4,6 +4,22 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and each skill carries its own semver `version` in its `SKILL.md` frontmatter.
 
+## [1.4.0] - 2026-09-03
+
+### Fixed
+
+- **Ayni moved to `ayni.denscope.xyz`** (was `ayni-alpha.vercel.app`). Same stale-host problem DenScope already had.
+- **DenScope and Ayni are indexers, not oracles.** They read ERC-8004 events from chain and serve computed scores over HTTP; nothing goes back on-chain. Renamed throughout `trust-score` and in the README's skill table.
+- **SKALE Base (1187947933) was missing** from DenScope's chain list. Taken from each service's `src/config/chains.ts`: DenScope covers Celo, Celo Sepolia and SKALE Base; Ayni covers Avalanche C-Chain and Fuji. Scripts now resolve `skale-base`.
+
+### Added
+
+- Guidance on reading the chain directly versus querying an indexer: `read-feedback.sh` for ground truth on one agent (no key, no third party), an indexer for aggregate scores, risk signals, sybil detection and cross-agent search.
+
+### Resolved
+
+The 401 on every `/api/v1/*` endpoint is deliberate, confirmed in the source: `authenticateApiKey` is the first line of each route handler, written per endpoint rather than applied as broad middleware. Documentation predating 1.0.1 that described public endpoints was simply wrong.
+
 ## [1.3.0] - 2026-09-03
 
 ### Added
