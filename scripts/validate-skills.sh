@@ -120,11 +120,18 @@ check_scripts() {
   [ -d "$skill_dir/scripts" ] || return 0
 
   local script
-  for script in "$skill_dir"/scripts/*; do
+  for script in "$skill_dir"/scripts/* "$skill_dir"/scripts/lib/*; do
     [ -f "$script" ] || continue
     local rel="${script#"$REPO_ROOT"/}"
 
-    if [ ! -x "$script" ]; then
+    # Files under scripts/lib/ are sourced by other scripts, never run directly.
+    if [[ "$script" == */scripts/lib/* ]]; then
+      if [ -x "$script" ]; then
+        fail "$rel is a sourced library and must not be executable"
+      else
+        pass "$rel is non-executable (sourced library)"
+      fi
+    elif [ ! -x "$script" ]; then
       fail "$rel is not executable (chmod +x)"
     else
       pass "$rel is executable"
@@ -143,7 +150,9 @@ check_scripts() {
     fi
 
     # Every bash script that can touch the network or a key must fail fast.
-    if head -1 "$script" | grep -q 'bash' && ! grep -q 'set -euo pipefail' "$script"; then
+    if [[ "$script" != */scripts/lib/* ]] \
+        && head -1 "$script" | grep -q 'bash' \
+        && ! grep -q 'set -euo pipefail' "$script"; then
       fail "$rel does not 'set -euo pipefail'"
     else
       pass "$rel sets strict mode"
@@ -161,13 +170,29 @@ check_scripts() {
 
 check_secrets() {
   local skill_dir="$1"
-  # A real private key literal, not the name of an env var.
-  if grep -rEn '0x[0-9a-fA-F]{64}' "$skill_dir" --include='*.sh' --include='*.md' --include='*.json' \
-      | grep -v '0x0000000000000000000000000000000000000000000000000000000000000000' \
-      | grep -qv 'requestHash\|responseHash\|txHash\|EMPTY_HASH'; then
-    fail "contains what looks like a hardcoded 32-byte key or hash literal"
+  local hits
+
+  # Flag 32-byte hex literals only where they would actually be a secret:
+  # assigned to a key/seed variable or passed straight to a signing flag.
+  # Bare 64-hex constants (event topics, the zero hash) are legitimate.
+  hits="$(grep -rEn \
+    -e '(PRIVATE_KEY|SECRET_KEY|MNEMONIC|SEED_PHRASE)[[:space:]]*=[[:space:]]*.?0x[0-9a-fA-F]{64}' \
+    -e '--private-key[[:space:]]+0x[0-9a-fA-F]{64}' \
+    "$skill_dir" --include='*.sh' --include='*.md' --include='*.json' 2>/dev/null || true)"
+
+  if [ -n "$hits" ]; then
+    fail "hardcoded signing key literal found:"
+    printf '%s\n' "$hits" | sed 's/^/         /'
   else
-    pass "no hardcoded key literals"
+    pass "no hardcoded signing keys"
+  fi
+
+  # A mnemonic committed as prose is just as bad as one in a variable.
+  if grep -rEqn '\b(abandon|zoo)([[:space:]]+[a-z]+){10,}' "$skill_dir" \
+      --include='*.sh' --include='*.md' --include='*.json' 2>/dev/null; then
+    fail "what looks like a BIP-39 mnemonic phrase is committed"
+  else
+    pass "no committed mnemonic phrases"
   fi
 }
 
@@ -224,6 +249,17 @@ main() {
     check_secrets "$skill_dir"
     check_readme_listing "$skill_name"
   done
+
+  CURRENT_SKILL="_shared"
+  echo
+  echo "${BOLD}shared library${RESET}"
+  if [ -x "$REPO_ROOT/scripts/sync-shared.sh" ]; then
+    if "$REPO_ROOT/scripts/sync-shared.sh" --check 2>&1 | grep -q DRIFT; then
+      fail "vendored copies of skills/_shared/erc8004/lib.sh have drifted — run ./scripts/sync-shared.sh"
+    else
+      pass "vendored shared library is in sync across skills"
+    fi
+  fi
 
   CURRENT_SKILL=""
   echo
