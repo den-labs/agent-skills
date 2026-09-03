@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    name: Validate skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck and jq
+        run: sudo apt-get update && sudo apt-get install -y shellcheck jq
+
+      - name: Validate skill structure
+        run: ./scripts/validate-skills.sh
+
+      - name: Check the shared library has not drifted
+        run: ./scripts/sync-shared.sh --check
+
+  safety:
+    name: On-chain script safety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      # `cast` is stubbed inside the suite, so this never reaches a real chain.
+      - name: Run safety tests
+        run: ./tests/test-safety.sh
+
+  addresses:
+    name: Verify registry addresses on-chain
+    runs-on: ubuntu-latest
+    # Depends on public RPC endpoints, so a failure here is informational:
+    # it means an address needs re-checking, not that the PR is broken.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check each documented registry has code deployed
+        run: ./scripts/verify-addresses.sh
