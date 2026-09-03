@@ -1,139 +1,74 @@
 #!/usr/bin/env bash
+# Register an AI agent under ERC-8004 on Celo.
+#
+# Usage:
+#   ./register.sh <agent-uri>       register an already-hosted registration file
+#   ./register.sh ipfs              build the file, pin it to IPFS, then register
+#
+# Network defaults to Celo Sepolia. Set NETWORK=mainnet for the real chain;
+# you will be asked to confirm before any funds are spent.
 set -euo pipefail
 
-# ERC-8004 Agent Registration on Celo
-# Usage:
-#   ./scripts/register.sh <agent-uri>
-#   ./scripts/register.sh ipfs              # Upload to IPFS first, then register
-#   NETWORK=sepolia ./scripts/register.sh <agent-uri>  # Register on Celo Sepolia testnet
-
-NETWORK="${NETWORK:-mainnet}"
-
-if [ "$NETWORK" = "sepolia" ]; then
-  RPC_URL="${CELO_RPC_URL:-https://forno.celo-sepolia.celo-testnet.org}"
-  IDENTITY_REGISTRY="0x8004A818BFB912233c491871b3d84c89A494BD9e"
-  CHAIN_ID="11142220"
-  EXPLORER="https://celo-sepolia.blockscout.com"
-else
-  RPC_URL="${CELO_RPC_URL:-https://forno.celo.org}"
-  IDENTITY_REGISTRY="0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
-  CHAIN_ID="42220"
-  EXPLORER="https://celoscan.io"
-fi
-
-if [ -z "${PRIVATE_KEY:-}" ]; then
-  echo "Error: PRIVATE_KEY environment variable is required"
-  exit 1
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/erc8004.sh
+source "$SCRIPT_DIR/lib/erc8004.sh"
+# shellcheck source=lib/network.sh
+source "$SCRIPT_DIR/lib/network.sh"
 
 AGENT_URI="${1:-}"
 
 if [ -z "$AGENT_URI" ]; then
-  echo "Usage: ./scripts/register.sh <agent-uri|ipfs>"
-  echo ""
-  echo "Examples:"
-  echo "  ./scripts/register.sh https://myagent.xyz/agent.json"
-  echo "  ./scripts/register.sh ipfs://QmXYZ..."
-  echo "  PINATA_JWT=xxx ./scripts/register.sh ipfs"
-  echo "  NETWORK=sepolia ./scripts/register.sh https://myagent.xyz/agent.json"
+  cat >&2 <<'USAGE'
+Usage: ./register.sh <agent-uri|ipfs>
+
+Examples:
+  ./register.sh https://myagent.xyz/agent.json
+  ./register.sh ipfs://QmXYZ...
+  AGENT_NAME="My Agent" PINATA_JWT=xxx ./register.sh ipfs
+  NETWORK=mainnet ./register.sh https://myagent.xyz/agent.json
+
+Signing (in order of preference):
+  ERC8004_ACCOUNT=<name>   encrypted keystore — cast wallet import <name> --interactive
+  ERC8004_LEDGER=1         Ledger hardware wallet
+  PRIVATE_KEY=<raw hex>    unencrypted, discouraged
+USAGE
   exit 1
 fi
 
-# If "ipfs" mode, create and upload registration file first
+e8_require_foundry
+e8_require_jq
+e8_load_network
+e8_resolve_signer
+
 if [ "$AGENT_URI" = "ipfs" ]; then
-  if [ -z "${PINATA_JWT:-}" ]; then
-    echo "Error: PINATA_JWT is required for IPFS upload"
-    exit 1
-  fi
-
-  AGENT_NAME="${AGENT_NAME:-My Celo Agent}"
-  AGENT_DESCRIPTION="${AGENT_DESCRIPTION:-An AI agent on Celo}"
-  AGENT_IMAGE="${AGENT_IMAGE:-}"
-
-  REGISTRATION_JSON=$(cat <<EOF
-{
-  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
-  "name": "$AGENT_NAME",
-  "description": "$AGENT_DESCRIPTION",
-  "image": "$AGENT_IMAGE",
-  "services": [],
-  "x402Support": false,
-  "active": true,
-  "registrations": [
-    {
-      "agentId": 0,
-      "agentRegistry": "eip155:${CHAIN_ID}:${IDENTITY_REGISTRY}"
-    }
-  ],
-  "supportedTrust": ["reputation"]
-}
-EOF
-)
-
-  echo "Uploading registration file to IPFS via Pinata..."
-
-  TMPFILE=$(mktemp /tmp/agent-registration-XXXXXX.json)
-  echo "$REGISTRATION_JSON" > "$TMPFILE"
-
-  RESPONSE=$(curl -s -X POST "https://api.pinata.cloud/pinning/pinFileToIPFS" \
-    -H "Authorization: Bearer $PINATA_JWT" \
-    -F "file=@$TMPFILE" \
-    -F "pinataMetadata={\"name\": \"agent-registration-celo-${CHAIN_ID}.json\"}")
-
-  rm -f "$TMPFILE"
-
-  IPFS_HASH=$(echo "$RESPONSE" | grep -o '"IpfsHash":"[^"]*"' | cut -d'"' -f4)
-
-  if [ -z "$IPFS_HASH" ]; then
-    echo "Error: Failed to upload to IPFS"
-    echo "Response: $RESPONSE"
-    exit 1
-  fi
-
-  AGENT_URI="ipfs://$IPFS_HASH"
-  echo "Uploaded to IPFS: $AGENT_URI"
+  : "${AGENT_NAME:?AGENT_NAME is required when building the registration file}"
+  AGENT_URI="$(e8_pin_json_to_ipfs \
+    "$(e8_registration_json "$E8_CHAIN_ID" "$E8_IDENTITY_REGISTRY")" \
+    "agent-registration-celo-${E8_CHAIN_ID}.json")"
+  e8_ok "Pinned to IPFS: $AGENT_URI"
 fi
 
-echo ""
-echo "=== ERC-8004 Agent Registration ==="
-echo "Network:  Celo $NETWORK (Chain ID: $CHAIN_ID)"
-echo "Registry: $IDENTITY_REGISTRY"
-echo "Agent URI: $AGENT_URI"
-echo ""
+SIGNER="$(e8_signer_address)"
 
-# Check if cast (Foundry) is available
-if ! command -v cast &> /dev/null; then
-  echo "Error: 'cast' (Foundry) is required. Install it with:"
-  echo "  curl -L https://foundry.paradigm.xyz | bash && foundryup"
-  exit 1
-fi
+e8_info ""
+e8_info "=== ERC-8004 Agent Registration ==="
+e8_info "Network:   ${E8_CHAIN_LABEL} ${E8_NETWORK} (chain ID ${E8_CHAIN_ID})"
+e8_info "Registry:  ${E8_IDENTITY_REGISTRY}"
+e8_info "Agent URI: ${AGENT_URI}"
+[ -n "$SIGNER" ] && e8_info "Signer:    ${SIGNER}"
+e8_info ""
 
-echo "Registering agent..."
+e8_confirm_mainnet "$E8_NETWORK" "Register agent '${AGENT_URI}' on ${E8_CHAIN_LABEL} mainnet."
 
-TX_HASH=$(cast send "$IDENTITY_REGISTRY" \
-  "register(string)(uint256)" "$AGENT_URI" \
-  --rpc-url "$RPC_URL" \
-  --private-key "$PRIVATE_KEY" \
-  --json | grep -o '"transactionHash":"[^"]*"' | cut -d'"' -f4)
+TX_HASH="$(e8_send_tx "$E8_RPC_URL" "$E8_IDENTITY_REGISTRY" "register(string)(uint256)" "$AGENT_URI")"
 
-echo "Transaction sent: $TX_HASH"
-echo "Explorer: $EXPLORER/tx/$TX_HASH"
+e8_ok "Registration confirmed."
+e8_info "Transaction: ${E8_EXPLORER}/tx/${TX_HASH}"
 
-# Wait for receipt
-echo "Waiting for confirmation..."
-sleep 3
-
-RECEIPT=$(cast receipt "$TX_HASH" --rpc-url "$RPC_URL" --json 2>/dev/null || echo "")
-
-if [ -n "$RECEIPT" ]; then
-  echo ""
-  echo "Registration successful!"
-  echo "Transaction: $EXPLORER/tx/$TX_HASH"
-  echo ""
-  echo "Your agent is now registered on Celo $NETWORK."
-  echo "View on 8004.org: https://www.8004.org"
+AGENT_ID="$(e8_agent_id_from_receipt "$E8_RPC_URL" "$TX_HASH")"
+if [ -n "$AGENT_ID" ]; then
+  e8_ok "Agent ID: ${AGENT_ID}"
+  e8_info "Verify:   ./check-agent.sh ${AGENT_ID}"
 else
-  echo ""
-  echo "Transaction submitted. Check status at:"
-  echo "$EXPLORER/tx/$TX_HASH"
+  e8_warn "Could not read the agent ID from the receipt. Check the explorer link above."
 fi

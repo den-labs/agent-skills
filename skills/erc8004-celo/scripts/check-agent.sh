@@ -1,68 +1,41 @@
 #!/usr/bin/env bash
+# Read an ERC-8004 agent's on-chain record on Celo.
+#
+# Usage: ./check-agent.sh <agent-id>
+#        NETWORK=mainnet ./check-agent.sh 1
+#
+# Read-only: sends no transaction and needs no signer.
 set -euo pipefail
 
-# ERC-8004 Agent Checker on Celo
-# Usage:
-#   ./scripts/check-agent.sh <agent-id>
-#   NETWORK=sepolia ./scripts/check-agent.sh <agent-id>
-
-NETWORK="${NETWORK:-mainnet}"
-
-if [ "$NETWORK" = "sepolia" ]; then
-  RPC_URL="${CELO_RPC_URL:-https://forno.celo-sepolia.celo-testnet.org}"
-  IDENTITY_REGISTRY="0x8004A818BFB912233c491871b3d84c89A494BD9e"
-  REPUTATION_REGISTRY="0x8004B663056A597Dffe9eCcC1965A193B7388713"
-  CHAIN_ID="11142220"
-  EXPLORER="https://celo-sepolia.blockscout.com"
-else
-  RPC_URL="${CELO_RPC_URL:-https://forno.celo.org}"
-  IDENTITY_REGISTRY="0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
-  REPUTATION_REGISTRY="0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
-  CHAIN_ID="42220"
-  EXPLORER="https://celoscan.io"
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/erc8004.sh
+source "$SCRIPT_DIR/lib/erc8004.sh"
+# shellcheck source=lib/network.sh
+source "$SCRIPT_DIR/lib/network.sh"
 
 AGENT_ID="${1:-}"
+[ -n "$AGENT_ID" ] || e8_die "Usage: ./check-agent.sh <agent-id>"
+printf '%s' "$AGENT_ID" | grep -qE '^[0-9]+$' || e8_die "Agent ID must be a positive integer, got '$AGENT_ID'."
 
-if [ -z "$AGENT_ID" ]; then
-  echo "Usage: ./scripts/check-agent.sh <agent-id>"
-  echo "  NETWORK=sepolia ./scripts/check-agent.sh 1"
-  exit 1
+e8_require_foundry
+e8_load_network
+
+e8_info "=== ERC-8004 Agent #${AGENT_ID} on ${E8_CHAIN_LABEL} ${E8_NETWORK} ==="
+e8_info ""
+
+# ownerOf reverts for an unminted token — that is how we detect "not registered".
+OWNER="$(cast call "$E8_IDENTITY_REGISTRY" "ownerOf(uint256)(address)" "$AGENT_ID" \
+  --rpc-url "$E8_RPC_URL" 2>/dev/null || true)"
+
+if [ -z "$OWNER" ]; then
+  e8_die "Agent #${AGENT_ID} is not registered on ${E8_CHAIN_LABEL} ${E8_NETWORK}."
 fi
 
-if ! command -v cast &> /dev/null; then
-  echo "Error: 'cast' (Foundry) is required."
-  exit 1
-fi
+TOKEN_URI="$(cast call "$E8_IDENTITY_REGISTRY" "tokenURI(uint256)(string)" "$AGENT_ID" \
+  --rpc-url "$E8_RPC_URL" 2>/dev/null || true)"
 
-echo "=== ERC-8004 Agent Info ==="
-echo "Network: Celo $NETWORK (Chain ID: $CHAIN_ID)"
-echo "Agent ID: $AGENT_ID"
-echo ""
-
-# Get owner
-OWNER=$(cast call "$IDENTITY_REGISTRY" "ownerOf(uint256)(address)" "$AGENT_ID" --rpc-url "$RPC_URL" 2>/dev/null || echo "NOT_FOUND")
-
-if [ "$OWNER" = "NOT_FOUND" ] || [ -z "$OWNER" ]; then
-  echo "Agent #$AGENT_ID is not registered."
-  exit 0
-fi
-
-echo "Owner: $OWNER"
-
-# Get tokenURI
-TOKEN_URI=$(cast call "$IDENTITY_REGISTRY" "tokenURI(uint256)(string)" "$AGENT_ID" --rpc-url "$RPC_URL" 2>/dev/null || echo "")
-echo "Agent URI: $TOKEN_URI"
-
-# Get agent wallet
-AGENT_WALLET=$(cast call "$IDENTITY_REGISTRY" "getAgentWallet(uint256)(address)" "$AGENT_ID" --rpc-url "$RPC_URL" 2>/dev/null || echo "0x0000000000000000000000000000000000000000")
-echo "Agent Wallet: $AGENT_WALLET"
-
-# Get reputation clients
-CLIENTS=$(cast call "$REPUTATION_REGISTRY" "getClients(uint256)(address[])" "$AGENT_ID" --rpc-url "$RPC_URL" 2>/dev/null || echo "[]")
-echo ""
-echo "Reputation Clients: $CLIENTS"
-
-echo ""
-echo "Registry ID: eip155:${CHAIN_ID}:${IDENTITY_REGISTRY}"
-echo "Explorer: $EXPLORER/address/$IDENTITY_REGISTRY"
+printf 'Owner:     %s\n' "$OWNER"
+printf 'Agent URI: %s\n' "${TOKEN_URI:-<unavailable>}"
+printf 'Registry:  %s\n' "$E8_IDENTITY_REGISTRY"
+printf 'CAIP-10:   eip155:%s:%s\n' "$E8_CHAIN_ID" "$E8_IDENTITY_REGISTRY"
+printf 'Explorer:  %s/token/%s?a=%s\n' "$E8_EXPLORER" "$E8_IDENTITY_REGISTRY" "$AGENT_ID"
